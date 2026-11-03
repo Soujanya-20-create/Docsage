@@ -1,0 +1,12 @@
+# Optional: a persistent Qdrant server. Set QDRANT_MODE=http in backend/.env to use it.
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+volumes:
+  qdrant_data:
