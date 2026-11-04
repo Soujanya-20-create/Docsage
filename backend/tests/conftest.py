@@ -8,6 +8,8 @@ os.environ["UPLOAD_DIR"] = f"{_tmp}/uploads"
 os.environ["AUTO_MIGRATE"] = "false"
 os.environ["DEMO_EMAIL"] = ""  # the dev .env may define a demo account; tests start clean
 os.environ["DEMO_PASSWORD"] = ""
+for _k in ("RESEND_API_KEY", "SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "BFF_SECRET"):
+    os.environ[_k] = ""  # real mail and proxy settings in the dev .env must not leak into tests
 os.environ["AUTH_RATE_PER_MINUTE"] = "1000"
 os.environ["LOGIN_ATTEMPTS_PER_MINUTE"] = "1000"
 os.environ["ASK_RATE_PER_MINUTE"] = "1000"

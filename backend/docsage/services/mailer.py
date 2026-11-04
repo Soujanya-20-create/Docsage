@@ -29,8 +29,12 @@ def _send_smtp(to: str, subject: str, text: str) -> None:
 
 async def send_email(to: str, subject: str, text: str) -> bool:
     """Returns True if the message was handed to a provider. Never raises: callers must not leak failures."""
-    try:
-        if settings.resend_api_key:
+    # Resend first; if it refuses (for example the free test sender only delivers to its owner),
+    # fall back to SMTP so the message still goes out when both are configured.
+    attempted = False
+    if settings.resend_api_key:
+        attempted = True
+        try:
             async with httpx.AsyncClient(timeout=20) as client:
                 resp = await client.post(
                     "https://api.resend.com/emails",
@@ -39,11 +43,16 @@ async def send_email(to: str, subject: str, text: str) -> bool:
                 )
                 resp.raise_for_status()
             return True
-        if settings.smtp_host:
+        except Exception:  # noqa: BLE001
+            log.exception("Sending email through Resend failed")
+    if settings.smtp_host:
+        attempted = True
+        try:
             await asyncio.to_thread(_send_smtp, to, subject, text)
             return True
-    except Exception:  # noqa: BLE001
-        log.exception("Sending email to a user failed")
+        except Exception:  # noqa: BLE001
+            log.exception("Sending email through SMTP failed")
+    if attempted:
         return False
 
     if settings.is_production:
