@@ -1,13 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BorderBeam } from "border-beam";
-import { MetalFx } from "metal-fx";
-import { ThinkingOrb } from "thinking-orbs";
 import {
   AlertCircle,
+  BarChart3,
   ArrowRight,
   CheckCircle2,
   Circle,
@@ -28,9 +26,7 @@ import { DonutChart } from "@/components/charts/DonutChart";
 import { ApiError, api, type Stats, type User } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useChats } from "@/lib/chats";
-import { usePrefs } from "@/lib/prefs";
 
-const PROMPTS = ["Summarize my latest document", "What are the key dates?", "Find the payment terms"];
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -146,11 +142,9 @@ function Skeleton() {
 export default function DashboardPage() {
   const { user } = useAuth();
   const { setPendingQuestion, setActiveId, newChat } = useChats();
-  const [prefs] = usePrefs();
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
-  const [question, setQuestion] = useState("");
 
   const load = useCallback(async () => {
     setError("");
@@ -178,70 +172,25 @@ export default function DashboardPage() {
     router.push("/chat");
   }
 
-  function submit(e: FormEvent) {
-    e.preventDefault();
-    startChat(question);
-  }
-
   const first = (user?.name || "").split(" ")[0];
-  const beamTheme = prefs.theme === "dark" ? "dark" : "light";
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
-      {/* Hero */}
-      <section className="relative isolate overflow-hidden rounded-3xl border border-line bg-card shadow-[var(--shadow)]">
-        <div className="bg-wash absolute inset-0 -z-10" aria-hidden />
-        <div className="bg-grid absolute inset-0 -z-10 opacity-70" aria-hidden />
-        <div className="grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-[1.35fr_0.65fr]">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-brand">
-              {greeting()}
-              {first ? `, ${first}` : ""}
-            </p>
-            <h1 className="mt-2 max-w-xl text-3xl font-semibold leading-[1.1] tracking-tight sm:text-4xl">Start a chat with your documents</h1>
-            <p className="mt-3 max-w-lg text-[0.95rem] leading-relaxed text-muted">Ask a question in plain language. Every answer cites the file and page it came from.</p>
-
-            <form onSubmit={submit} className="mt-6 max-w-xl">
-              <BorderBeam size="md" colorVariant="ocean" strength={0.7} theme={beamTheme}>
-                <div className="flex items-center gap-2 rounded-2xl border border-line bg-card p-2 pl-4">
-                  <label htmlFor="hero-ask" className="sr-only">
-                    Ask a question
-                  </label>
-                  <input
-                    id="hero-ask"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    maxLength={4000}
-                    placeholder="Ask anything about your documents"
-                    className="min-w-0 flex-1 bg-transparent py-2 text-[0.95rem] outline-none placeholder:text-muted"
-                  />
-                  <MetalFx preset="chromatic" theme={beamTheme} innerShadow>
-                    <button type="submit" className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold text-fg">
-                      Start chat <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
-                    </button>
-                  </MetalFx>
-                </div>
-              </BorderBeam>
-            </form>
-
-            <div className="mt-5 flex flex-wrap items-center gap-2.5">
-              {PROMPTS.map((p) => (
-                <button key={p} type="button" onClick={() => startChat(p)} className="rounded-full border border-line bg-card px-3.5 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand hover:text-fg">
-                  {p}
-                </button>
-              ))}
-              <Link href="/documents" className="inline-flex items-center gap-1.5 px-1 text-xs font-semibold text-brand hover:underline">
-                <UploadCloud className="h-3.5 w-3.5" strokeWidth={2} aria-hidden /> Upload documents
-              </Link>
-            </div>
-          </div>
-
-          <div className="relative hidden place-items-center lg:grid" aria-hidden>
-            <div className="absolute h-44 w-44 rounded-full bg-brand-solid/15 blur-3xl" />
-            <ThinkingOrb state="weaving" size={64} theme="auto" />
-          </div>
+      <header className="flex flex-wrap items-center gap-4">
+        <span className="tint-ico t-green grid h-12 w-12 place-items-center rounded-2xl">
+          <BarChart3 className="h-6 w-6" strokeWidth={1.8} aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-extrabold tracking-tight">Analytics</h1>
+          <p className="text-sm text-muted">
+            {greeting()}
+            {first ? `, ${first}` : ""}. Here is how your documents and questions are doing.
+          </p>
         </div>
-      </section>
+        <button onClick={() => startChat()} className="btn">
+          <MessageSquare className="h-4 w-4" strokeWidth={2} aria-hidden /> New chat
+        </button>
+      </header>
 
       {error && (
         <div role="alert" className="card flex flex-wrap items-center gap-3 border-danger/40 p-4 text-sm">
