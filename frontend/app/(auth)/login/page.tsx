@@ -54,11 +54,6 @@ export default function LoginPage() {
         <TextField label="Email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
         <div>
           <PasswordField label="Password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-          <div className="mt-2 text-right">
-            <Link href="/forgot-password" className="text-sm font-medium text-brand hover:underline">
-              Forgot password?
-            </Link>
-          </div>
         </div>
         <SubmitButton busy={busy} busyLabel="Signing in">
           Sign in

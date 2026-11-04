@@ -197,6 +197,8 @@ def test_email_verification_by_code_and_the_requirement_gate(client, outbox, mon
     tokens = signup(client, "verify@example.com")
     headers = bearer(tokens)
     assert client.get("/api/auth/me", headers=headers).json()["email_verified"] is False
+    assert outbox == []  # sign-up no longer emails a code; one is sent only on request
+    assert client.post("/api/auth/resend-verification", headers=headers).status_code in (200, 202, 204)
     assert any("confirmation code" in m[1] for m in outbox)
     status_now = client.get("/api/auth/otp-status", headers=headers).json()
     assert status_now["expires_in"] > 0 and status_now["resend_in"] > 0

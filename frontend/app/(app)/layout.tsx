@@ -3,46 +3,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Loader2, MailWarning, Menu, Search } from "lucide-react";
+import { Loader2, Menu, Search } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { SearchPalette, OPEN_SEARCH_EVENT } from "@/components/app/SearchPalette";
 import { Sidebar } from "@/components/app/Sidebar";
-import { ApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { ChatsProvider, useChats } from "@/lib/chats";
-import Link from "next/link";
-
-function VerifyBanner({ required }: { required: boolean }) {
-  const router = useRouter();
-  const [state, setState] = useState<"idle" | "sending" | "error">("idle");
-  const [message, setMessage] = useState("");
-
-  async function resend() {
-    setState("sending");
-    try {
-      await api("/auth/resend-verification", { method: "POST" });
-      router.push("/verify-email");
-    } catch (err) {
-      // A 429 just means a code was sent a moment ago: go and enter it.
-      if (err instanceof ApiError && err.status === 429) return void router.push("/verify-email");
-      setMessage(err instanceof ApiError ? err.message : "Could not send the code.");
-      setState("error");
-    }
-  }
-
-  return (
-    <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line bg-brand-soft px-4 py-2 text-sm">
-      <MailWarning className="h-4 w-4 shrink-0 text-brand" strokeWidth={1.75} aria-hidden />
-      <span className="text-fg">{state === "error" ? message : required ? "Confirm your email to upload documents and ask questions." : "Confirm your email so you can reset your password if you forget it."}</span>
-      <Link href="/verify-email" className="font-semibold text-brand hover:underline">
-        Enter code
-      </Link>
-      <button onClick={resend} disabled={state === "sending"} className="font-semibold text-muted hover:text-fg disabled:opacity-60">
-        {state === "sending" ? "Sending" : "Email me a new code"}
-      </button>
-    </div>
-  );
-}
 
 function Shell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -111,8 +77,6 @@ function Shell({ children }: { children: ReactNode }) {
             <Search className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </button>
         </header>
-        {/* No banner when the server cannot email a code: there would be nothing to enter. */}
-        {user && !user.email_verified && user.email_enabled && <VerifyBanner required={user.verification_required} />}
         <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>

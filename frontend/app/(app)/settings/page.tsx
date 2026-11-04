@@ -87,15 +87,6 @@ function Profile() {
         <p className="label">Email</p>
         <p className="flex flex-wrap items-center gap-2 text-sm">
           {user?.email}
-          {user?.email_verified ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-ok/10 px-2 py-0.5 text-xs font-medium text-ok">
-              <CheckCircle2 className="h-3 w-3" strokeWidth={2} aria-hidden /> Confirmed
-            </span>
-          ) : (
-            <a href="/verify-email" className="rounded-full bg-warn/10 px-2 py-0.5 text-xs font-semibold text-warn hover:underline">
-              Not confirmed. Enter code
-            </a>
-          )}
         </p>
       </div>
       <button className="btn" disabled={busy || name.trim() === (user?.name ?? "")}>

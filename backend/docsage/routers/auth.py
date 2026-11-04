@@ -44,7 +44,7 @@ async def _send_code(user: User, purpose: str, session: AsyncSession, background
 
 
 @router.post("/register", dependencies=auth_limit, response_model=TokensOut, status_code=201)
-async def register(body: RegisterIn, background: BackgroundTasks, session: AsyncSession = Depends(get_session)):
+async def register(body: RegisterIn, session: AsyncSession = Depends(get_session)):
     email = body.email.lower()
     if await session.scalar(select(User).where(User.email == email)):
         raise HTTPException(status.HTTP_409_CONFLICT, "An account with this email already exists")
@@ -60,7 +60,6 @@ async def register(body: RegisterIn, background: BackgroundTasks, session: Async
     except IntegrityError:  # two sign-ups with the same email raced past the check above
         await session.rollback()
         raise HTTPException(status.HTTP_409_CONFLICT, "An account with this email already exists") from None
-    await _send_code(user, "verify", session, background)
     return await sessions.issue(session, user.id)
 
 

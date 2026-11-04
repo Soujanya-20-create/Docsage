@@ -30,7 +30,7 @@ export default function RegisterPage() {
     setBusy(true);
     try {
       await register(name.trim(), email.trim(), password, accepted);
-      router.replace("/verify-email");
+      router.replace("/workspace");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not create the account. Check your connection and try again.");
       setBusy(false);
