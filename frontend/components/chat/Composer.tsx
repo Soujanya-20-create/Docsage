@@ -133,7 +133,6 @@ export function Composer({
   const [menu, setMenu] = useState(false);
   const [library, setLibrary] = useState(false);
   const [up, setUp] = useState(true);
-  const [focused, setFocused] = useState(false);
 
   // The glow reacts to a real microphone stream while dictating.
   const mic = useMicrophone();
@@ -207,8 +206,10 @@ export function Composer({
   return (
     <div>
       <div className="relative">
-      <VoiceBeam stream={mic.stream} theme="auto" colorVariant="ocean" active={dictation.listening}>
-        <BorderBeam size="md" colorVariant="ocean" strength={0.65} theme={fxTheme} active={focused || busy || dictation.listening}>
+      {/* idle={0}: no resting glow, so nothing shows along the edge until you dictate */}
+      <VoiceBeam stream={mic.stream} theme="auto" colorVariant="ocean" active={dictation.listening} idle={0}>
+        {/* The beam only appears while an answer is being written, never on focus or at rest */}
+        <BorderBeam size="md" colorVariant="ocean" strength={busy ? 0.65 : 0} theme={fxTheme} active={busy}>
           <div className="glass rounded-[1.75rem]">
             {uploads.items.length > 0 && (
               <ul className="flex flex-wrap gap-2 px-3 pt-3" aria-label="Attached files">
@@ -228,8 +229,6 @@ export function Composer({
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={key}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
               maxLength={4000}
               placeholder={dictation.listening ? "Listening. Start speaking" : placeholder}
               className="block max-h-[200px] w-full resize-none bg-transparent px-5 pb-1 pt-4 text-[0.95rem] leading-relaxed outline-none placeholder:text-muted"

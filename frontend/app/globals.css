@@ -127,6 +127,10 @@ body {
   border-radius: 6px;
 }
 
+/* The composer sits inside its own rounded card, so it needs no ring of its own. */
+textarea#composer-input:focus,
+textarea#composer-input:focus-visible { outline: none; border-radius: 0; }
+
 /* ---- controls ------------------------------------------------------------------------- */
 .btn {
   display: inline-flex;
