@@ -16,7 +16,7 @@ class VectorStore:
             if settings.qdrant_mode == "memory":
                 self._client = QdrantClient(":memory:")
             else:
-                self._client = QdrantClient(url=settings.qdrant_url)
+                self._client = QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key or None, timeout=30)
         return self._client
 
     def _ensure(self, dim: int) -> None:
@@ -60,6 +60,18 @@ class VectorStore:
                     )
                 ),
             )
+
+    def _delete_user(self, user_id: int) -> None:
+        if self.client.collection_exists(settings.qdrant_collection):
+            self.client.delete(
+                settings.qdrant_collection,
+                points_selector=qm.FilterSelector(
+                    filter=qm.Filter(must=[qm.FieldCondition(key="user_id", match=qm.MatchValue(value=user_id))])
+                ),
+            )
+
+    async def delete_user(self, user_id: int) -> None:
+        await asyncio.to_thread(self._delete_user, user_id)
 
     async def upsert(self, ids: list[int], vectors: list[list[float]], payloads: list[dict]) -> None:
         await asyncio.to_thread(self._upsert, ids, vectors, payloads)

@@ -1,16 +1,38 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/lib/auth";
+import { site } from "@/lib/site";
 import "./globals.css";
 
+const sans = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
+const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
+
+const title = `${site.name}: ${site.tagline}`;
+
 export const metadata: Metadata = {
-  title: "DocSage: answers from your documents, with sources",
-  description: "Upload PDFs or scans, ask questions in plain language, and get answers that cite the page they came from.",
+  // Vercel provides the production domain; it makes the share image URL absolute.
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000",
+  ),
+  title: { default: title, template: `%s | ${site.name}` },
+  description: site.description,
+  applicationName: site.name,
+  openGraph: { title, description: site.description, siteName: site.name, type: "website" },
+  twitter: { card: "summary_large_image", title, description: site.description },
 };
+
+export const viewport: Viewport = { themeColor: "#f6f8fc" };
+
+// Applies a saved light/dark choice before first paint so there is no flash.
+const THEME_SCRIPT = `try{var t=JSON.parse(localStorage.getItem("docsage:prefs")||"{}").theme;document.documentElement.dataset.theme=t==="dark"||t==="system"?t:"light"}catch(e){}`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${sans.variable} ${mono.variable}`} data-theme="light" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body>
         <AuthProvider>{children}</AuthProvider>
       </body>

@@ -3,6 +3,8 @@ import asyncio
 import base64
 import io
 import logging
+import os
+import shutil
 from functools import lru_cache
 
 import httpx
@@ -11,6 +13,7 @@ from PIL import Image
 from ..config import settings
 
 log = logging.getLogger(__name__)
+Image.MAX_IMAGE_PIXELS = settings.max_image_pixels  # raises DecompressionBombError beyond 2x this
 
 MAX_SIDE = 1600
 PROMPT = "Transcribe all text in this image exactly as written. Output only the text, no commentary."
@@ -20,11 +23,18 @@ class OCRError(Exception):
     pass
 
 
+WINDOWS_DEFAULT = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+
 @lru_cache
 def tesseract_available() -> bool:
     try:
         import pytesseract
 
+        if settings.tesseract_cmd:
+            pytesseract.pytesseract.tesseract_cmd = settings.tesseract_cmd
+        elif shutil.which("tesseract") is None and os.path.exists(WINDOWS_DEFAULT):
+            pytesseract.pytesseract.tesseract_cmd = WINDOWS_DEFAULT
         pytesseract.get_tesseract_version()
         return True
     except Exception:  # noqa: BLE001 - missing package or missing binary
@@ -44,7 +54,7 @@ def _normalise(data: bytes) -> bytes:
 def _tesseract(data: bytes) -> str:
     import pytesseract
 
-    return pytesseract.image_to_string(Image.open(io.BytesIO(data)))
+    return pytesseract.image_to_string(Image.open(io.BytesIO(data)), lang=settings.ocr_languages)
 
 
 async def _vision(data: bytes) -> str:

@@ -5,15 +5,16 @@ from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, status
 from PIL import Image
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
 from ..db import get_session
-from ..deps import current_user
+from ..deps import current_user, verified_user
 from ..models import Chunk, Document, User
 from ..schemas import ChunkOut, DocumentOut
 from ..services.ingest import process_document
+from ..ratelimit import check
 from ..services.search import keyword_index
 from ..services.vectorstore import vector_store
 
@@ -44,21 +45,32 @@ async def _owned(session: AsyncSession, user: User, document_id: int) -> Documen
 async def upload(
     file: UploadFile,
     background: BackgroundTasks,
-    user: User = Depends(current_user),
+    user: User = Depends(verified_user),
     session: AsyncSession = Depends(get_session),
 ):
+    await check(f"upload:{user.id}", 20)
+    count, used = (
+        await session.execute(select(func.count(Document.id), func.coalesce(func.sum(Document.size), 0)).where(Document.user_id == user.id))
+    ).one()
+    if count >= settings.max_documents_per_user:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, f"You can keep up to {settings.max_documents_per_user} documents. Delete some first.")
     limit = settings.max_upload_mb * 1024 * 1024
+    if used + 1 > settings.max_storage_mb_per_user * 1024 * 1024:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Your storage allowance is used up. Delete some documents first.")
     data = bytearray()
     while block := await file.read(1024 * 1024):
         data.extend(block)
         if len(data) > limit:
             raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, f"File is larger than {settings.max_upload_mb} MB")
 
-    name = file.filename or "upload"
+    name = "".join(c for c in (file.filename or "upload") if c.isprintable())[:255] or "upload"
     kind = _kind_for(name, bytes(data[:5]))
     if kind == "image":
         try:
-            Image.open(io.BytesIO(data)).verify()
+            with Image.open(io.BytesIO(data)) as img:  # raises DecompressionBombError for absurd dimensions
+                if img.format not in {"PNG", "JPEG", "WEBP"}:
+                    raise ValueError("unsupported image format")
+                img.verify()
         except Exception:  # noqa: BLE001
             raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, "This file is not a valid image") from None
 
@@ -67,7 +79,7 @@ async def upload(
     target.mkdir(parents=True, exist_ok=True)
     await asyncio.to_thread((target / stored_name).write_bytes, bytes(data))
 
-    doc = Document(user_id=user.id, filename=name[:255], stored_name=stored_name, kind=kind, size=len(data))
+    doc = Document(user_id=user.id, filename=name, stored_name=stored_name, kind=kind, size=len(data))
     session.add(doc)
     await session.commit()
     background.add_task(process_document, doc.id)

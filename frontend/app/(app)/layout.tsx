@@ -1,58 +1,118 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
-import { FileText, LogOut, MessageSquare } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { Loader2, MailWarning, Menu } from "lucide-react";
+import { Brand } from "@/components/Brand";
+import { Sidebar } from "@/components/app/Sidebar";
+import { ApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { ChatsProvider, useChats } from "@/lib/chats";
+import Link from "next/link";
 
-const nav = [
-  { href: "/documents", label: "Documents", icon: FileText },
-  { href: "/chat", label: "Chat", icon: MessageSquare },
-];
+function VerifyBanner() {
+  const [state, setState] = useState<"idle" | "sending" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  async function resend() {
+    setState("sending");
+    try {
+      await api("/auth/resend-verification", { method: "POST" });
+      window.location.assign("/verify-email");
+    } catch (err) {
+      // A 429 just means a code was sent a moment ago: go and enter it.
+      if (err instanceof ApiError && err.status === 429) return void window.location.assign("/verify-email");
+      setMessage(err instanceof ApiError ? err.message : "Could not send the code.");
+      setState("error");
+    }
+  }
+
+  return (
+    <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line bg-brand-soft px-4 py-2 text-sm">
+      <MailWarning className="h-4 w-4 shrink-0 text-brand" strokeWidth={1.75} aria-hidden />
+      <span className="text-fg">{state === "error" ? message : "Confirm your email to upload documents and ask questions."}</span>
+      <Link href="/verify-email" className="font-semibold text-brand hover:underline">
+        Enter code
+      </Link>
+      <button onClick={resend} disabled={state === "sending"} className="font-semibold text-muted hover:text-fg disabled:opacity-60">
+        {state === "sending" ? "Sending" : "Email me a new code"}
+      </button>
+    </div>
+  );
+}
+
+function Shell({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  const { drawerOpen, setDrawerOpen } = useChats();
+  const reduce = useReducedMotion();
+
+  return (
+    <div className="flex h-[100dvh] bg-bg">
+      {/* Desktop sidebar */}
+      <aside className="hidden w-72 shrink-0 border-r border-line md:block">
+        <Sidebar />
+      </aside>
+
+      {/* Mobile drawer */}
+      <AnimatePresence>
+        {drawerOpen && (
+          <>
+            <motion.button
+              aria-label="Close menu"
+              className="fixed inset-0 z-40 bg-black/50 md:hidden"
+              initial={reduce ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDrawerOpen(false)}
+            />
+            <motion.aside
+              className="fixed inset-y-0 left-0 z-50 w-[85%] max-w-xs border-r border-line shadow-2xl md:hidden"
+              initial={reduce ? false : { x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 380, damping: 36 }}
+            >
+              <Sidebar />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center gap-3 border-b border-line bg-card px-3 py-2 md:hidden">
+          <button onClick={() => setDrawerOpen(true)} aria-label="Open menu" className="grid h-9 w-9 place-items-center rounded-lg hover:bg-brand-soft">
+            <Menu className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+          </button>
+          <Brand size={22} />
+        </header>
+        {user && !user.email_verified && <VerifyBanner />}
+        <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
+      </div>
+    </div>
+  );
+}
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, waking } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
   }, [loading, user, router]);
 
   if (loading || !user) {
-    return <div className="flex h-screen items-center justify-center text-muted">Loading…</div>;
+    return (
+      <div className="flex h-[100dvh] flex-col items-center justify-center gap-3 text-muted">
+        <Loader2 className="h-6 w-6 animate-spin text-brand" strokeWidth={1.75} aria-hidden />
+        <p className="text-sm">{waking ? "The server is waking up. This can take up to a minute." : "Loading your workspace"}</p>
+      </div>
+    );
   }
 
   return (
-    <div className="flex h-screen flex-col md:flex-row">
-      <aside className="flex items-center justify-between gap-2 border-b border-line bg-card px-3 py-2 md:w-56 md:flex-col md:items-stretch md:justify-start md:border-b-0 md:border-r md:p-4">
-        <Link href="/" className="flex items-center gap-2 font-bold md:mb-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/brand/docsage-mark.png" alt="" className="h-6 w-6" /> DocSage
-        </Link>
-        <nav className="flex gap-1 md:flex-col">
-          {nav.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              aria-current={pathname.startsWith(href) ? "page" : undefined}
-              className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ${
-                pathname.startsWith(href) ? "bg-brand text-brand-fg" : "text-muted hover:bg-line"
-              }`}
-            >
-              <Icon className="h-4 w-4" /> {label}
-            </Link>
-          ))}
-        </nav>
-        <div className="md:mt-auto">
-          <p className="mb-2 hidden truncate text-xs text-muted md:block">{user.email}</p>
-          <button onClick={logout} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted hover:bg-line">
-            <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">Sign out</span>
-          </button>
-        </div>
-      </aside>
-      <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
-    </div>
+    <ChatsProvider>
+      <Shell>{children}</Shell>
+    </ChatsProvider>
   );
 }

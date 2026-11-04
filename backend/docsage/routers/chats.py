@@ -9,7 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
 from ..db import SessionLocal, get_session
-from ..deps import current_user
+from ..deps import current_user, verified_user
+from ..ratelimit import check_ask
 from ..models import Chat, Message, User
 from ..schemas import AskIn, ChatCreate, ChatOut, MessageOut
 from ..services import llm
@@ -38,6 +39,15 @@ def _event(name: str, data) -> str:
 async def list_chats(user: User = Depends(current_user), session: AsyncSession = Depends(get_session)):
     result = await session.scalars(select(Chat).where(Chat.user_id == user.id).order_by(Chat.id.desc()))
     return list(result)
+
+
+@router.delete("", status_code=204)
+async def delete_all_chats(user: User = Depends(current_user), session: AsyncSession = Depends(get_session)):
+    """Clear the whole history. Documents are untouched."""
+    ids = select(Chat.id).where(Chat.user_id == user.id)
+    await session.execute(delete(Message).where(Message.chat_id.in_(ids)))
+    await session.execute(delete(Chat).where(Chat.user_id == user.id))
+    await session.commit()
 
 
 @router.post("", response_model=ChatOut, status_code=201)
@@ -73,13 +83,14 @@ async def list_messages(
 async def ask(
     chat_id: int,
     body: AskIn,
-    user: User = Depends(current_user),
+    user: User = Depends(verified_user),
     session: AsyncSession = Depends(get_session),
 ):
     """Answer a question from the user's documents as a Server-Sent Events stream.
 
     Events: `sources` (citations), `token` (answer text), `done`, or `error`.
     """
+    await check_ask(user.id)
     chat = await _owned(session, user, chat_id)
 
     recent = list(

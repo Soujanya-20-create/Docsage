@@ -7,7 +7,11 @@ QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
 
 
 class Embedder:
-    """Lazy wrapper around a sentence-transformers model (loaded on first use)."""
+    """Lazy wrapper around a fastembed (ONNX) model, loaded on first use.
+
+    fastembed runs the same BAAI/bge models as sentence-transformers but without PyTorch, which
+    keeps the install small and the memory use low enough for a 512 MB host.
+    """
 
     def __init__(self) -> None:
         self._model = None
@@ -16,20 +20,14 @@ class Embedder:
     def _load(self):
         with self._lock:
             if self._model is None:
-                from sentence_transformers import SentenceTransformer
+                from fastembed import TextEmbedding
 
-                self._model = SentenceTransformer(settings.embedding_model)
+                self._model = TextEmbedding(settings.embedding_model)
         return self._model
 
     def _encode(self, texts: list[str]) -> list[list[float]]:
-        vectors = self._load().encode(
-            texts, batch_size=32, normalize_embeddings=True, show_progress_bar=False
-        )
-        return vectors.tolist()
-
-    @property
-    def dim(self) -> int:
-        return self._load().get_sentence_embedding_dimension()
+        # bge models return L2-normalised vectors, which is what cosine distance expects.
+        return [vector.tolist() for vector in self._load().embed(texts, batch_size=32)]
 
     async def embed_passages(self, texts: list[str]) -> list[list[float]]:
         return await asyncio.to_thread(self._encode, texts)

@@ -39,3 +39,25 @@ def test_rrf_rewards_agreement_between_rankers():
 
 def test_tokenize_lowercases_and_drops_punctuation():
     assert tokenize("Hello, World-42!") == ["hello", "world", "42"]
+
+
+def test_keyword_search_works_on_a_single_chunk(client):
+    """Regression: BM25Okapi scored every word in a one-chunk collection as <= 0 and found nothing."""
+    import asyncio
+
+    from docsage.db import SessionLocal
+    from docsage.models import Chunk
+    from docsage.services.search import _KeywordIndex
+
+    async def run():
+        async with SessionLocal() as s:
+            doc_user = 987
+            s.add(Chunk(document_id=1, user_id=doc_user, page=1, position=0, text="The sacred fruit of Atlantis is the blue mango."))
+            await s.commit()
+            index = _KeywordIndex()
+            hit = await index.top(s, doc_user, "sacred fruit of Atlantis", None, 5)
+            miss = await index.top(s, doc_user, "quarterly revenue", None, 5)
+            return hit, miss
+
+    hit, miss = asyncio.run(run())
+    assert len(hit) == 1 and miss == []

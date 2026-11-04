@@ -2,8 +2,8 @@
 import logging
 import re
 
-from rank_bm25 import BM25Okapi
-from sqlalchemy import select
+from rank_bm25 import BM25Plus
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models import Chunk, Document
@@ -33,7 +33,7 @@ class _KeywordIndex:
     """Per-user BM25 index, rebuilt lazily after that user's documents change."""
 
     def __init__(self) -> None:
-        self._cache: dict[int, tuple[BM25Okapi, list[tuple[int, int]]]] = {}
+        self._cache: dict[int, tuple[tuple[int, int], BM25Plus, list[tuple[int, int]]]] = {}
 
     def invalidate(self, user_id: int) -> None:
         self._cache.pop(user_id, None)
@@ -41,13 +41,23 @@ class _KeywordIndex:
     async def top(
         self, session: AsyncSession, user_id: int, question: str, document_ids: list[int] | None, limit: int
     ) -> list[int]:
-        if user_id not in self._cache:
+        # A cheap fingerprint of the user's chunks, so a cache built before another worker (or a delete
+        # that happened elsewhere) changed the data is rebuilt instead of served stale.
+        version = tuple(
+            (await session.execute(select(func.count(Chunk.id), func.max(Chunk.id)).where(Chunk.user_id == user_id))).one()
+        )
+        cached = self._cache.get(user_id)
+        if cached is None or cached[0] != version:
             rows = (await session.execute(select(Chunk.id, Chunk.document_id, Chunk.text).where(Chunk.user_id == user_id))).all()
             if not rows:
+                self._cache.pop(user_id, None)
                 return []
-            index = BM25Okapi([tokenize(r.text) for r in rows])
-            self._cache[user_id] = (index, [(r.id, r.document_id) for r in rows])
-        index, ids = self._cache[user_id]
+            # BM25Okapi gives a word zero or negative weight when it appears in over half the chunks,
+            # so small collections (a single document) matched nothing. BM25Plus keeps IDF positive;
+            # delta=0 makes chunks without the query word score exactly 0.
+            index = BM25Plus([tokenize(r.text) for r in rows], delta=0)
+            self._cache[user_id] = (version, index, [(r.id, r.document_id) for r in rows])
+        _, index, ids = self._cache[user_id]
         scores = index.get_scores(tokenize(question))
         ranked = sorted(range(len(ids)), key=lambda i: scores[i], reverse=True)
         allowed = set(document_ids) if document_ids else None

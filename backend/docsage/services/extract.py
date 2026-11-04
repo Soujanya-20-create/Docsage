@@ -14,6 +14,10 @@ def _read_pdf(path: Path) -> tuple[list[tuple[int, str]], dict[int, bytes]]:
     pages: list[tuple[int, str]] = []
     scans: dict[int, bytes] = {}
     with pymupdf.open(path) as pdf:
+        if pdf.needs_pass:
+            raise ValueError("This PDF is password-protected. Remove the password and upload it again.")
+        if len(pdf) > settings.max_pdf_pages:
+            raise ValueError(f"This PDF has {len(pdf)} pages; the limit is {settings.max_pdf_pages}.")
         for number, page in enumerate(pdf, start=1):
             text = page.get_text().strip()
             pages.append((number, text))

@@ -19,39 +19,66 @@ def _payload(chunk: Chunk) -> dict:
     return {"user_id": chunk.user_id, "document_id": chunk.document_id, "page": chunk.page}
 
 
+async def _mark_failed(document_id: int, message: str) -> None:
+    async with SessionLocal() as session:
+        doc = await session.get(Document, document_id)
+        if doc is not None:
+            doc.status, doc.error = "failed", message[:500]
+            await session.commit()
+
+
 async def process_document(document_id: int) -> None:
-    """Extract, chunk and embed an uploaded document, then mark it ready or failed."""
+    """Extract, chunk and embed an uploaded document, then mark it ready or failed.
+
+    The slow work (OCR, embedding) runs with no database transaction open. Holding one would keep
+    SQLite's single write lock for the whole time and make every other write fail.
+    """
     async with SessionLocal() as session:
         doc = await session.get(Document, document_id)
         if doc is None:
             return
-        user_id = doc.user_id
-        try:
-            pages = await extract_pages(Path(settings.upload_dir) / doc.stored_name, doc.kind)
+        user_id, stored_name, kind = doc.user_id, doc.stored_name, doc.kind
+
+    try:
+        pages = await extract_pages(Path(settings.upload_dir) / stored_name, kind)
+        pieces = [(page, piece) for page, text in pages for piece in split_text(text)]
+        if not pieces:
+            raise ValueError("No readable text was found in this file.")
+        vectors = await embedder.embed_passages([piece for _, piece in pieces])
+
+        async with SessionLocal() as session:  # short transaction: insert, index, mark ready
+            doc = await session.get(Document, document_id)
+            if doc is None:  # deleted while it was processing
+                return
             chunks = [
-                Chunk(document_id=doc.id, user_id=user_id, page=page, position=0, text=piece)
-                for page, text in pages
-                for piece in split_text(text)
+                Chunk(document_id=document_id, user_id=user_id, page=page, position=position, text=piece)
+                for position, (page, piece) in enumerate(pieces)
             ]
-            if not chunks:
-                raise ValueError("No readable text was found in this file.")
-            for position, chunk in enumerate(chunks):
-                chunk.position = position
             session.add_all(chunks)
             await session.flush()  # assigns chunk ids
-
-            vectors = await embedder.embed_passages([c.text for c in chunks])
             await vector_store.upsert([c.id for c in chunks], vectors, [_payload(c) for c in chunks])
-
             doc.status, doc.error = "ready", None
             doc.pages, doc.chunk_count = len(pages), len(chunks)
-        except Exception as exc:  # noqa: BLE001 - surfaced to the user on the document
-            log.exception("Processing document %s failed", document_id)
-            await session.rollback()
-            doc = await session.get(Document, document_id)
-            doc.status, doc.error = "failed", str(exc)[:500]
-        await session.commit()
-    keyword_index.invalidate(user_id)
+            await session.commit()
+    except Exception as exc:  # noqa: BLE001 - surfaced to the user on the document
+        log.exception("Processing document %s failed", document_id)
+        await _mark_failed(document_id, str(exc) or exc.__class__.__name__)
+    finally:
+        # The searchable text is stored; the original is not kept, which limits what a breach exposes.
+        (Path(settings.upload_dir) / stored_name).unlink(missing_ok=True)
+        keyword_index.invalidate(user_id)
+
+
+async def fail_interrupted_documents() -> None:
+    """Documents still "processing" at startup lost their worker in a restart; don't leave them spinning."""
+    async with SessionLocal() as session:
+        stuck = (await session.scalars(select(Document).where(Document.status == "processing"))).all()
+        for doc in stuck:
+            doc.status = "failed"
+            doc.error = "Processing was interrupted by a server restart. Please upload the file again."
+        if stuck:
+            await session.commit()
+            log.warning("Marked %d interrupted document(s) as failed", len(stuck))
 
 
 async def rebuild_vector_index(batch_size: int = 64) -> None:

@@ -1,1 +1,4 @@
+# PostgreSQL support (asyncpg) is already in requirements.txt
 pytest>=8.0
+fakeredis>=2.23
+pip-audit>=2.7

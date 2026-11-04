@@ -21,14 +21,14 @@ def test_register_login_and_me(client):
 
 def test_duplicate_email_and_bad_password_are_rejected(client):
     register(client, "dup@example.com")
-    again = client.post("/api/auth/register", json={"email": "dup@example.com", "password": "correct-horse-1"})
+    again = client.post("/api/auth/register", json={"email": "dup@example.com", "password": "correct-horse-1", "accept_terms": True})
     assert again.status_code == 409
     bad = client.post("/api/auth/login", json={"email": "dup@example.com", "password": "wrong-password"})
     assert bad.status_code == 401
 
 
 def test_refresh_token_cannot_be_used_as_access_token(client):
-    r = client.post("/api/auth/register", json={"email": "tok@example.com", "password": "correct-horse-1"})
+    r = client.post("/api/auth/register", json={"email": "tok@example.com", "password": "correct-horse-1", "accept_terms": True})
     refresh = r.json()["refresh_token"]
     assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {refresh}"}).status_code == 401
     assert client.post("/api/auth/refresh", json={"refresh_token": refresh}).status_code == 200

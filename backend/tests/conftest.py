@@ -5,6 +5,10 @@ import tempfile
 _tmp = tempfile.mkdtemp(prefix="docsage-test-")
 os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{_tmp}/test.db"
 os.environ["UPLOAD_DIR"] = f"{_tmp}/uploads"
+os.environ["AUTO_MIGRATE"] = "false"
+os.environ["AUTH_RATE_PER_MINUTE"] = "1000"
+os.environ["LOGIN_ATTEMPTS_PER_MINUTE"] = "1000"
+os.environ["ASK_RATE_PER_MINUTE"] = "1000"
 os.environ["SECRET_KEY"] = "test-secret-key-that-is-long-enough-for-hs256"
 for key in ("GROQ_API_KEY", "CEREBRAS_API_KEY", "OPENROUTER_API_KEY"):
     os.environ[key] = ""
@@ -31,6 +35,6 @@ def client():
 
 
 def register(client, email):
-    r = client.post("/api/auth/register", json={"email": email, "password": "correct-horse-1"})
+    r = client.post("/api/auth/register", json={"email": email, "password": "correct-horse-1", "accept_terms": True})
     assert r.status_code == 201, r.text
     return {"Authorization": f"Bearer {r.json()['access_token']}"}

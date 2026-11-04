@@ -95,7 +95,11 @@ export default function DocumentsPage() {
   }
 
   async function remove(doc: Doc) {
-    await api(`/documents/${doc.id}`, { method: "DELETE" });
+    try {
+      await api(`/documents/${doc.id}`, { method: "DELETE" });
+    } catch (e) {
+      setError(`${doc.filename}: ${e instanceof Error ? e.message : "could not delete"}`);
+    }
     load();
   }
 
@@ -123,7 +127,10 @@ export default function DocumentsPage() {
         <span className="font-semibold">{uploading ? "Uploading…" : "Drop files here or click to browse"}</span>
         <span className="text-xs text-muted">PDF, PNG, JPG or WebP</span>
       </button>
-      <input ref={input} type="file" multiple hidden accept=".pdf,.png,.jpg,.jpeg,.webp" onChange={(e) => e.target.files && upload(e.target.files)} />
+      <input ref={input} type="file" multiple hidden accept=".pdf,.png,.jpg,.jpeg,.webp" onChange={(e) => {
+        if (e.target.files) upload(Array.from(e.target.files));
+        e.target.value = ""; // so picking the same file again still fires onChange
+      }} />
 
       {error && <p role="alert" className="mt-4 text-sm text-danger">{error}</p>}
 

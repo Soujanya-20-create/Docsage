@@ -1,6 +1,9 @@
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+from .security import password_problem
 
 
 class ORM(BaseModel):
@@ -9,28 +12,91 @@ class ORM(BaseModel):
 
 class RegisterIn(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=8, max_length=128)
+    password: str = Field(max_length=128)
     name: str = Field(default="", max_length=120)
+    accept_terms: Literal[True]  # must be explicitly true; the time of acceptance is stored
+
+    @field_validator("password")
+    @classmethod
+    def _strong(cls, value: str, info) -> str:
+        problem = password_problem(value, str(info.data.get("email", "")))
+        if problem:
+            raise ValueError(problem)
+        return value
 
 
 class LoginIn(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(max_length=128)
 
 
 class RefreshIn(BaseModel):
-    refresh_token: str
+    refresh_token: str = Field(max_length=2000)
 
 
 class TokensOut(BaseModel):
     access_token: str
     refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int
 
 
 class UserOut(ORM):
     id: int
     email: str
     name: str
+    email_verified: bool
+
+
+class EmailIn(BaseModel):
+    email: EmailStr
+
+
+Code = Field(pattern=r"^\d{6}$")
+
+
+class OtpIn(BaseModel):
+    code: str = Code
+
+
+class OtpOut(BaseModel):
+    """Countdown values for the code screen, in seconds."""
+    expires_in: int
+    resend_in: int
+
+
+class ResetIn(OtpIn):
+    email: EmailStr
+    new_password: str = Field(max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def _strong(cls, value: str, info) -> str:
+        problem = password_problem(value, str(info.data.get("email", "")))
+        if problem:
+            raise ValueError(problem)
+        return value
+
+
+class ProfileIn(BaseModel):
+    name: str = Field(max_length=120)
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str = Field(max_length=128)
+    new_password: str = Field(max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def _strong(cls, value: str) -> str:
+        problem = password_problem(value)
+        if problem:
+            raise ValueError(problem)
+        return value
+
+
+class PasswordIn(BaseModel):
+    password: str = Field(max_length=128)
 
 
 class DocumentOut(ORM):
