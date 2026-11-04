@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
         </Link>
       }
     >
-      <form onSubmit={submit} className="space-y-5">
+      <form onSubmit={submit} className="space-y-4">
         <FormError>{error}</FormError>
         <TextField label="Email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
         <SubmitButton busy={busy} busyLabel="Sending code">

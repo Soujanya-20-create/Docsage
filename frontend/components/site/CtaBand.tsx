@@ -14,12 +14,10 @@ export function CtaBand({
 }) {
   return (
     <section className="px-4 pb-24 sm:px-6">
-      <Reveal className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-grad px-6 py-16 text-center shadow-[0_30px_60px_-30px_rgb(79_70_229/0.7)] sm:px-12 sm:py-20">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-60"
-          style={{ background: "radial-gradient(50% 70% at 85% 0%, rgb(255 255 255 / 0.28), transparent 70%)" }}
-          aria-hidden
-        />
+      <Reveal className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] cta-vivid px-6 py-16 text-center shadow-[0_30px_70px_-30px_rgb(124_77_255/0.8)] sm:px-12 sm:py-20">
+        <div aria-hidden className="pointer-events-none absolute -left-16 -top-20 h-64 w-64 rounded-full bg-[#27d3c0]/40 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-24 right-0 h-72 w-72 rounded-full bg-[#ff6fa8]/45 blur-3xl" />
+        <div aria-hidden className="bg-grid pointer-events-none absolute inset-0 opacity-25 [--brand:#fff]" />
         <h2 className="relative mx-auto max-w-2xl text-3xl font-extrabold tracking-tight text-white sm:text-4xl">{title}</h2>
         <p className="relative mx-auto mt-4 max-w-xl text-base leading-relaxed text-white/85">{text}</p>
         <div className="relative mt-8 flex justify-center">

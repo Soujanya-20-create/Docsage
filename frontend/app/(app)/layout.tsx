@@ -48,13 +48,28 @@ function Shell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const { drawerOpen, setDrawerOpen } = useChats();
   const reduce = useReducedMotion();
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Remember the sidebar choice on this device. Read after mount so server and client markup match.
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem("docsage:sidebar") === "closed");
+    } catch {}
+  }, []);
+  const toggle = () =>
+    setCollapsed((c) => {
+      try {
+        localStorage.setItem("docsage:sidebar", c ? "open" : "closed");
+      } catch {}
+      return !c;
+    });
 
   return (
     <div className="flex h-[100dvh]">
       <SearchPalette />
       {/* Desktop sidebar */}
-      <aside className="hidden w-[17.5rem] shrink-0 border-r border-line md:block">
-        <Sidebar />
+      <aside className={`hidden shrink-0 border-r border-line transition-[width] duration-300 ease-out md:block ${collapsed ? "w-[4.75rem]" : "w-[17.5rem]"}`}>
+        <Sidebar collapsed={collapsed} onToggle={toggle} />
       </aside>
 
       {/* Mobile drawer */}

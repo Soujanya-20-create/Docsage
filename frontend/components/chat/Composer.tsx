@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { AlertCircle, CheckCircle2, FileText, FolderOpen, Loader2, Mic, MicOff, Plus, SendHorizontal, Square, UploadCloud, X } from "lucide-react";
+import { BorderBeam } from "border-beam";
+import { MetalFx } from "metal-fx";
+import { ThinkingOrb } from "thinking-orbs";
 import { VoiceBeam, useMicrophone } from "voice-glow";
 import { api, type Doc } from "@/lib/api";
 import { usePrefs } from "@/lib/prefs";
@@ -45,7 +48,7 @@ function Chip({ item, onRemove }: { item: Upload; onRemove: () => void }) {
   );
 }
 
-function LibraryPicker({ onPick, onClose }: { onPick: (docs: Doc[]) => void; onClose: () => void }) {
+function LibraryPicker({ onPick, onClose, up }: { onPick: (docs: Doc[]) => void; onClose: () => void; up: boolean }) {
   const [docs, setDocs] = useState<Doc[] | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
@@ -54,7 +57,11 @@ function LibraryPicker({ onPick, onClose }: { onPick: (docs: Doc[]) => void; onC
   }, []);
 
   return (
-    <div role="dialog" aria-label="Choose documents" className="card absolute bottom-full left-0 z-20 mb-2 w-80 max-w-[calc(100vw-2rem)] p-2">
+    <div
+      role="dialog"
+      aria-label="Choose documents"
+      className={`card absolute left-3 z-30 w-80 max-w-[calc(100vw-2rem)] p-2 ${up ? "bottom-full mb-2" : "top-full mt-2"}`}
+    >
       <p className="px-2 pb-1 pt-1 text-xs font-semibold text-muted">Choose from your documents</p>
       <ul className="scroll-thin max-h-60 overflow-y-auto">
         {docs === null && <li className="sk m-2 h-8" aria-hidden />}
@@ -118,11 +125,15 @@ export function Composer({
   placeholder?: string;
 }) {
   const [prefs] = usePrefs();
+  const fxTheme = prefs.theme === "dark" ? "dark" : "light";
   const area = useRef<HTMLTextAreaElement>(null);
+  const plus = useRef<HTMLButtonElement>(null);
   const file = useRef<HTMLInputElement>(null);
   const base = useRef("");
   const [menu, setMenu] = useState(false);
   const [library, setLibrary] = useState(false);
+  const [up, setUp] = useState(true);
+  const [focused, setFocused] = useState(false);
 
   // The glow reacts to a real microphone stream while dictating.
   const mic = useMicrophone();
@@ -132,6 +143,23 @@ export function Composer({
     if (!dictation.listening) mic.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dictation.listening]);
+
+  // Close the attach menu on an outside click or Escape.
+  useEffect(() => {
+    if (!menu && !library) return;
+    const close = (e: Event) => {
+      if (e instanceof KeyboardEvent && e.key !== "Escape") return;
+      if (e instanceof MouseEvent && (e.target as HTMLElement).closest("[data-attach]")) return;
+      setMenu(false);
+      setLibrary(false);
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", close);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", close);
+    };
+  }, [menu, library]);
 
   // Grow with the text up to a limit, then scroll.
   const fit = useCallback(() => {
@@ -166,121 +194,151 @@ export function Composer({
     dictation.start();
   }
 
+  function togglePlus() {
+    // Open upward when there is room above the button, otherwise downward, so the menu is never cut off.
+    const top = plus.current?.getBoundingClientRect().top ?? 0;
+    setUp(top > 340);
+    setMenu((m) => !m);
+    setLibrary(false);
+  }
+
+  const hint = dictation.error || (indexing ? "Indexing your files. You can send once they are ready." : "");
+
   return (
-    <div className="relative">
+    <div>
+      <div className="relative">
       <VoiceBeam stream={mic.stream} theme="auto" colorVariant="ocean" active={dictation.listening}>
-      <div className="glass rounded-[1.75rem] transition-shadow focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-solid)_22%,transparent),var(--shadow-lift)]">
-        {uploads.items.length > 0 && (
-          <ul className="flex flex-wrap gap-2 px-3 pt-3" aria-label="Attached files">
-            {uploads.items.map((u) => (
-              <Chip key={u.key} item={u} onRemove={() => uploads.remove(u.key)} />
-            ))}
-          </ul>
-        )}
-
-        <label className="sr-only" htmlFor="composer-input">
-          Your question
-        </label>
-        <textarea
-          id="composer-input"
-          ref={area}
-          rows={1}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={key}
-          maxLength={4000}
-          placeholder={dictation.listening ? "Listening. Start speaking" : placeholder}
-          className="block max-h-[200px] w-full resize-none bg-transparent px-4 pb-1 pt-3.5 text-[0.95rem] leading-relaxed outline-none placeholder:text-muted"
-        />
-
-        <div className="flex items-center gap-1 px-2.5 pb-2.5">
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setMenu((m) => !m);
-                setLibrary(false);
-              }}
-              aria-label="Attach files"
-              aria-expanded={menu}
-              className="grid h-10 w-10 place-items-center rounded-full bg-card text-brand shadow-sm ring-1 ring-line transition-colors hover:bg-brand-soft"
-            >
-              <Plus className={`h-5 w-5 transition-transform ${menu ? "rotate-45" : ""}`} strokeWidth={2} aria-hidden />
-            </button>
-            {menu && (
-              <div role="menu" className="card absolute bottom-full left-0 z-20 mb-2 w-56 p-1.5">
-                <button
-                  role="menuitem"
-                  onClick={() => {
-                    setMenu(false);
-                    file.current?.click();
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-brand-soft"
-                >
-                  <UploadCloud className="h-4 w-4 text-brand" strokeWidth={1.75} aria-hidden /> Upload from device
-                </button>
-                <button
-                  role="menuitem"
-                  onClick={() => {
-                    setMenu(false);
-                    setLibrary(true);
-                  }}
-                  className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-brand-soft"
-                >
-                  <FolderOpen className="h-4 w-4 text-brand" strokeWidth={1.75} aria-hidden /> Choose from my documents
-                </button>
-              </div>
+        <BorderBeam size="md" colorVariant="ocean" strength={0.65} theme={fxTheme} active={focused || busy || dictation.listening}>
+          <div className="glass rounded-[1.75rem]">
+            {uploads.items.length > 0 && (
+              <ul className="flex flex-wrap gap-2 px-3 pt-3" aria-label="Attached files">
+                {uploads.items.map((u) => (
+                  <Chip key={u.key} item={u} onRemove={() => uploads.remove(u.key)} />
+                ))}
+              </ul>
             )}
-            {library && <LibraryPicker onPick={(docs) => uploads.attach(docs)} onClose={() => setLibrary(false)} />}
+
+            <label className="sr-only" htmlFor="composer-input">
+              Your question
+            </label>
+            <textarea
+              id="composer-input"
+              ref={area}
+              rows={1}
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              onKeyDown={key}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              maxLength={4000}
+              placeholder={dictation.listening ? "Listening. Start speaking" : placeholder}
+              className="block max-h-[200px] w-full resize-none bg-transparent px-5 pb-1 pt-4 text-[0.95rem] leading-relaxed outline-none placeholder:text-muted"
+            />
+
+            <div className="flex items-center gap-2 px-3 pb-3">
+              <button
+                ref={plus}
+                data-attach
+                type="button"
+                onClick={togglePlus}
+                aria-label="Attach files"
+                aria-expanded={menu}
+                aria-haspopup="menu"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-card text-brand shadow-sm ring-1 ring-line transition-colors hover:bg-brand-soft"
+              >
+                <Plus className={`h-5 w-5 transition-transform ${menu ? "rotate-45" : ""}`} strokeWidth={2} aria-hidden />
+              </button>
+
+              <span className="flex min-w-0 flex-1 items-center gap-2 truncate text-xs text-muted" aria-live="polite">
+                {dictation.listening && <ThinkingOrb state="listening" size={20} theme="auto" aria-label="Listening" />}
+                {dictation.listening ? "Listening" : hint}
+              </span>
+
+              {/* Microphone and send sit together on the right */}
+              <button
+                type="button"
+                onClick={toggleMic}
+                disabled={!dictation.supported}
+                aria-label={dictation.listening ? "Stop voice input" : "Speak your question"}
+                aria-pressed={dictation.listening}
+                title={dictation.supported ? undefined : "Voice input is not supported in this browser. Try Chrome, Edge or Safari."}
+                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                  dictation.listening ? "animate-pulse bg-danger text-white" : "text-muted hover:bg-brand-soft hover:text-fg"
+                }`}
+              >
+                {dictation.listening ? <MicOff className="h-5 w-5" strokeWidth={1.8} aria-hidden /> : <Mic className="h-5 w-5" strokeWidth={1.8} aria-hidden />}
+              </button>
+
+              {busy ? (
+                <button type="button" onClick={onStop} aria-label="Stop generating" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-fg text-bg transition-transform active:scale-95">
+                  <Square className="h-3.5 w-3.5 fill-current" aria-hidden />
+                </button>
+              ) : (
+                <MetalFx preset="chromatic" variant="circle" theme={fxTheme} innerShadow strength={canSend ? 1 : 0.5}>
+                  <button
+                    type="button"
+                    onClick={onSend}
+                    disabled={!canSend}
+                    aria-label="Send"
+                    className="grid h-11 w-11 place-items-center rounded-full text-fg transition-transform enabled:active:scale-95 disabled:cursor-not-allowed"
+                  >
+                    <SendHorizontal className="h-5 w-5" strokeWidth={2.1} aria-hidden />
+                  </button>
+                </MetalFx>
+              )}
+            </div>
           </div>
-          <input
-            ref={file}
-            type="file"
-            multiple
-            hidden
-            accept={ACCEPT}
-            onChange={(e) => {
-              if (e.target.files) uploads.add(Array.from(e.target.files));
-              e.target.value = ""; // so choosing the same file again still fires
-            }}
-          />
-
-          <button
-            type="button"
-            onClick={toggleMic}
-            disabled={!dictation.supported}
-            aria-label={dictation.listening ? "Stop voice input" : "Speak your question"}
-            aria-pressed={dictation.listening}
-            title={dictation.supported ? undefined : "Voice input is not supported in this browser. Try Chrome, Edge or Safari."}
-            className={`grid h-10 w-10 place-items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-              dictation.listening ? "animate-pulse bg-danger text-white" : "text-muted hover:bg-brand-soft hover:text-fg"
-            }`}
-          >
-            {dictation.listening ? <MicOff className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden /> : <Mic className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />}
-          </button>
-
-          <span className="ml-1 min-w-0 flex-1 truncate text-xs text-muted" aria-live="polite">
-            {dictation.error || (indexing ? "Indexing your files. You can send once they are ready." : "")}
-          </span>
-
-          {busy ? (
-            <button type="button" onClick={onStop} aria-label="Stop generating" className="grid h-9 w-9 place-items-center rounded-full bg-fg text-bg transition-transform active:scale-95">
-              <Square className="h-3.5 w-3.5 fill-current" aria-hidden />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onSend}
-              disabled={!canSend}
-              aria-label="Send"
-              className="bg-grad grid h-11 w-11 place-items-center rounded-full text-white shadow-[0_10px_22px_-8px_rgb(79_70_229/0.8)] transition-all enabled:hover:brightness-110 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
-            >
-              <SendHorizontal className="h-5 w-5" strokeWidth={2} aria-hidden />
-            </button>
-          )}
-        </div>
-      </div>
+        </BorderBeam>
       </VoiceBeam>
+
+      {/* Menus sit outside the glass, so nothing clips them */}
+      <input
+        ref={file}
+        type="file"
+        multiple
+        hidden
+        accept={ACCEPT}
+        onChange={(e) => {
+          if (e.target.files) uploads.add(Array.from(e.target.files));
+          e.target.value = ""; // so choosing the same file again still fires
+        }}
+      />
+      {menu && (
+        <div data-attach role="menu" className={`card absolute left-3 z-30 w-60 p-1.5 ${up ? "bottom-full mb-2" : "top-full mt-2"}`}>
+          <button
+            role="menuitem"
+            onClick={() => {
+              setMenu(false);
+              file.current?.click();
+            }}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium hover:bg-brand-soft"
+          >
+            <span className="tint-ico t-blue grid h-8 w-8 place-items-center rounded-lg">
+              <UploadCloud className="h-4 w-4" strokeWidth={1.8} aria-hidden />
+            </span>
+            Upload from device
+          </button>
+          <button
+            role="menuitem"
+            onClick={() => {
+              setMenu(false);
+              setLibrary(true);
+            }}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm font-medium hover:bg-brand-soft"
+          >
+            <span className="tint-ico t-violet grid h-8 w-8 place-items-center rounded-lg">
+              <FolderOpen className="h-4 w-4" strokeWidth={1.8} aria-hidden />
+            </span>
+            Choose from my documents
+          </button>
+        </div>
+      )}
+      {library && (
+        <div data-attach>
+          <LibraryPicker up={up} onPick={(docs) => uploads.attach(docs)} onClose={() => setLibrary(false)} />
+        </div>
+      )}
+      </div>
       <p className="mt-2 text-center text-xs text-muted">DocSage can make mistakes. Check important answers against the cited pages.</p>
     </div>
   );

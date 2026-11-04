@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import Link from "next/link";
 import { ThinkingOrb } from "thinking-orbs";
-import { CalendarClock, Check, Copy, ListChecks, Scale, Sparkles, UploadCloud, Volume2, VolumeX } from "lucide-react";
+import { CalendarClock, Check, Copy, FileDown, ListChecks, Loader2, Scale, Share2, Sparkles, UploadCloud, Volume2, VolumeX } from "lucide-react";
+import { chatTranscript, downloadChatPdf } from "@/lib/exportChat";
 import { useAuth } from "@/lib/auth";
 import { Composer } from "@/components/chat/Composer";
 import { AnswerMarkdown, ShareButton, SourceChips } from "@/components/chat/Message";
@@ -43,8 +44,67 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+const toolBtn =
+  "inline-flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-semibold text-muted transition-colors hover:bg-brand-soft hover:text-brand disabled:opacity-50";
+
+/** Top-right actions for the open conversation: copy it, share it, or save the whole thing as a PDF. */
+function ChatToolbar({ title, messages, disabled }: { title: string; messages: Message[]; disabled: boolean }) {
+  const [state, setState] = useState<"idle" | "copied" | "shared" | "pdf" | "error">("idle");
+  const flash = (next: typeof state) => {
+    setState(next);
+    setTimeout(() => setState("idle"), 2000);
+  };
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(chatTranscript(title, messages));
+      flash("copied");
+    } catch {
+      flash("error");
+    }
+  }
+
+  async function share() {
+    const text = chatTranscript(title, messages);
+    try {
+      if (typeof navigator.share === "function") await navigator.share({ title, text });
+      else await navigator.clipboard.writeText(text);
+      flash("shared");
+    } catch {
+      /* the share sheet was dismissed */
+    }
+  }
+
+  async function pdf() {
+    setState("pdf");
+    try {
+      await downloadChatPdf(title, messages);
+      flash("idle");
+    } catch {
+      flash("error");
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-1" role="toolbar" aria-label="Chat actions">
+      <button type="button" onClick={copy} disabled={disabled} className={toolBtn} title="Copy the whole chat">
+        {state === "copied" ? <Check className="h-4 w-4" strokeWidth={2.25} aria-hidden /> : <Copy className="h-4 w-4" strokeWidth={2} aria-hidden />}
+        <span className="hidden sm:inline">{state === "copied" ? "Copied" : "Copy chat"}</span>
+      </button>
+      <button type="button" onClick={share} disabled={disabled} className={toolBtn} title="Share the chat with its citations">
+        {state === "shared" ? <Check className="h-4 w-4" strokeWidth={2.25} aria-hidden /> : <Share2 className="h-4 w-4" strokeWidth={2} aria-hidden />}
+        <span className="hidden sm:inline">{state === "shared" ? "Shared" : "Share"}</span>
+      </button>
+      <button type="button" onClick={pdf} disabled={disabled || state === "pdf"} className={`${toolBtn} bg-brand-soft text-brand`} title="Save the whole chat as a PDF">
+        {state === "pdf" ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <FileDown className="h-4 w-4" strokeWidth={2} aria-hidden />}
+        <span className="hidden sm:inline">{state === "error" ? "Try again" : "Export PDF"}</span>
+      </button>
+    </div>
+  );
+}
+
 export default function ChatPage() {
-  const { activeId, setActiveId, resetKey, reload, pendingQuestion, setPendingQuestion } = useChats();
+  const { chats, activeId, setActiveId, resetKey, reload, pendingQuestion, setPendingQuestion } = useChats();
   const [prefs] = usePrefs();
   const { user } = useAuth();
   const firstName = (user?.name || "there").split(/\s+/)[0];
@@ -194,6 +254,7 @@ export default function ChatPage() {
   };
 
   const empty = messages.length === 0 && !loadingChat;
+  const chatTitle = chats.find((c) => c.id === activeId)?.title || messages.find((m) => m.role === "user")?.content.slice(0, 60) || "New chat";
   const composer = (
     <Composer
       value={question}
@@ -282,6 +343,13 @@ export default function ChatPage() {
         </div>
       ) : (
         <>
+          <div className="glass flex items-center gap-3 border-x-0 border-t-0 px-4 py-2.5 sm:px-6">
+            <span className="tint-ico t-violet grid h-9 w-9 shrink-0 place-items-center rounded-xl">
+              <Sparkles className="h-4 w-4" strokeWidth={1.9} aria-hidden />
+            </span>
+            <h1 className="min-w-0 flex-1 truncate text-[0.95rem] font-bold">{chatTitle}</h1>
+            <ChatToolbar title={chatTitle} messages={messages} disabled={busy || messages.length === 0} />
+          </div>
           <div
             ref={scroller}
             onScroll={(e) => {

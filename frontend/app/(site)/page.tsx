@@ -1,4 +1,5 @@
 import { Hero } from "@/components/home/Hero";
+import { Showcase, StatsStrip } from "@/components/home/Showcase";
 import { StickySteps } from "@/components/home/StickySteps";
 import { FeatureBento } from "@/components/home/FeatureBento";
 import { UseCases } from "@/components/home/UseCases";
@@ -11,6 +12,15 @@ export default function Home() {
   return (
     <>
       <Hero />
+
+      <StatsStrip />
+
+      <section className="py-20 sm:py-28">
+        <SectionHeading title="See it before you try it" center>
+          Ask in plain language, read a short answer, and check the exact page it came from.
+        </SectionHeading>
+        <Showcase />
+      </section>
 
       <section className="py-24 sm:py-32">
         <SectionHeading title="From a pile of files to a cited answer">

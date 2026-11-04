@@ -103,7 +103,7 @@ function ResetForm() {
         </Link>
       }
     >
-      <form onSubmit={submit} className="space-y-5">
+      <form onSubmit={submit} className="space-y-4">
         <FormError>{error}</FormError>
         <FormNotice>{notice}</FormNotice>
         <div>

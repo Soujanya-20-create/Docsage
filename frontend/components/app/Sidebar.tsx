@@ -7,14 +7,14 @@ import {
   BarChart3,
   ChevronDown,
   FileText,
-  Infinity as InfinityIcon,
   Layers,
   LogOut,
   MessageCircle,
   MessageSquarePlus,
   MoreVertical,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
-  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
@@ -44,10 +44,10 @@ const navItems = [
   { href: "/workspace", label: "Workspace", icon: Layers },
   { href: "/documents", label: "My Documents", icon: FileText },
   { href: "/dashboard", label: "Analytics", icon: BarChart3 },
-  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export function Sidebar() {
+/** `collapsed` shows an icon-only rail (desktop). The mobile drawer always passes false. */
+export function Sidebar({ collapsed = false, onToggle }: { collapsed?: boolean; onToggle?: () => void }) {
   const { user, logout } = useAuth();
   const { chats, loaded, activeId, setActiveId, newChat, remove, setDrawerOpen } = useChats();
   const pathname = usePathname();
@@ -58,6 +58,7 @@ export function Sidebar() {
 
   const groups = useMemo(() => group(chats), [chats]);
   const onChat = pathname.startsWith("/chat");
+  const onSettings = pathname.startsWith("/settings");
 
   const close = () => setDrawerOpen(false);
 
@@ -84,44 +85,62 @@ export function Sidebar() {
     .slice(0, 2)
     .join("");
 
+  // In the rail every item is just an icon centred in its row.
+  const item = collapsed ? "nav-item justify-center !px-0" : "nav-item";
+  const label = (text: string) => <span className={collapsed ? "sr-only" : ""}>{text}</span>;
+
   return (
     <div className="sidebar-surface flex h-full w-full flex-col">
-      {/* Logo */}
-      <div className="flex items-start justify-between px-5 pb-3 pt-6">
+      {/* Logo and the open/close control */}
+      <div className={`flex items-start pb-3 pt-6 ${collapsed ? "flex-col items-center gap-3 px-2" : "justify-between px-5"}`}>
         <Link href="/workspace" aria-label="DocSage workspace" onClick={close} className="block">
-          <span className="text-[1.15rem]">
-            <Brand size={34} />
-          </span>
-          <span className="mt-1 block pl-[44px] text-[11px] font-medium text-muted">Document Intelligence AI</span>
+          {collapsed ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src="/brand/docsage-mark.png" alt="DocSage" width={36} height={36} className="brand-tile h-9 w-9" />
+          ) : (
+            <>
+              <span className="text-[1.15rem]">
+                <Brand size={34} />
+              </span>
+              <span className="mt-1 block pl-[44px] text-[11px] font-medium text-muted">Document Intelligence AI</span>
+            </>
+          )}
         </Link>
         <button onClick={close} aria-label="Close menu" className="grid h-9 w-9 place-items-center rounded-xl text-muted hover:bg-brand-soft md:hidden">
           <X className="h-5 w-5" strokeWidth={1.75} aria-hidden />
         </button>
+        {onToggle && (
+          <button
+            onClick={onToggle}
+            aria-label={collapsed ? "Open sidebar" : "Close sidebar"}
+            aria-expanded={!collapsed}
+            title={collapsed ? "Open sidebar" : "Close sidebar"}
+            className="hidden h-9 w-9 place-items-center rounded-xl text-muted transition-colors hover:bg-brand-soft hover:text-fg md:grid"
+          >
+            {collapsed ? <PanelLeftOpen className="h-5 w-5" strokeWidth={1.8} aria-hidden /> : <PanelLeftClose className="h-5 w-5" strokeWidth={1.8} aria-hidden />}
+          </button>
+        )}
       </div>
 
       {/* Primary navigation */}
-      <nav aria-label="App" className="space-y-1 px-3 pt-2">
-        <button
-          onClick={startChat}
-          aria-current={onChat ? "page" : undefined}
-          className="nav-item w-full text-left"
-        >
-          <MessageSquarePlus className="h-[19px] w-[19px]" strokeWidth={1.9} aria-hidden />
-          New Chat
+      <nav aria-label="App" className={`space-y-1 pt-2 ${collapsed ? "px-2" : "px-3"}`}>
+        <button onClick={startChat} aria-current={onChat ? "page" : undefined} title="New Chat" className={`${item} w-full text-left`}>
+          <MessageSquarePlus className="h-[19px] w-[19px] shrink-0" strokeWidth={1.9} aria-hidden />
+          {label("New Chat")}
         </button>
-        {navItems.map(({ href, label, icon: Icon }) => {
+        {navItems.map(({ href, label: text, icon: Icon }) => {
           const active = pathname.startsWith(href);
           return (
-            <Link key={href} href={href} onClick={close} aria-current={active ? "page" : undefined} className="nav-item">
-              <Icon className="h-[19px] w-[19px]" strokeWidth={1.9} aria-hidden />
-              {label}
+            <Link key={href} href={href} onClick={close} aria-current={active ? "page" : undefined} title={text} className={item}>
+              <Icon className="h-[19px] w-[19px] shrink-0" strokeWidth={1.9} aria-hidden />
+              {label(text)}
             </Link>
           );
         })}
       </nav>
 
       {/* Recent chats */}
-      <div className="mt-5 flex min-h-0 flex-1 flex-col px-3">
+      <div className={`mt-5 flex min-h-0 flex-1 flex-col px-3 ${collapsed ? "hidden" : ""}`}>
         <button
           onClick={() => setRecentOpen((o) => !o)}
           aria-expanded={recentOpen}
@@ -141,17 +160,14 @@ export function Sidebar() {
               </div>
             )}
             {loaded && chats.length === 0 && <p className="px-3 pt-2 text-sm text-muted">Your conversations will appear here.</p>}
-            {groups.map(({ label, items }) => (
-              <section key={label} className="mt-3 first:mt-1">
-                <h3 className="px-3 pb-1 text-[10.5px] font-bold uppercase tracking-wider text-muted/70">{label}</h3>
+            {groups.map(({ label: heading, items }) => (
+              <section key={heading} className="mt-3 first:mt-1">
+                <h3 className="px-3 pb-1 text-[10.5px] font-bold uppercase tracking-wider text-muted/70">{heading}</h3>
                 <ul className="space-y-0.5">
                   {items.map((c) => {
                     const active = onChat && activeId === c.id;
                     return (
-                      <li
-                        key={c.id}
-                        className={`group flex items-center rounded-xl transition-colors ${active ? "bg-brand-soft" : "hover:bg-brand-soft/60"}`}
-                      >
+                      <li key={c.id} className={`group flex items-center rounded-xl transition-colors ${active ? "bg-brand-soft" : "hover:bg-brand-soft/60"}`}>
                         <button
                           onClick={() => openChat(c.id)}
                           aria-current={active ? "page" : undefined}
@@ -192,53 +208,44 @@ export function Sidebar() {
           </nav>
         )}
       </div>
+      {collapsed && <div className="flex-1" />}
 
-      {/* Plan card and account */}
-      <div className="space-y-3 p-3">
-        <div className="bg-grad relative overflow-hidden rounded-2xl p-3.5 text-white shadow-[0_14px_28px_-14px_rgb(79_70_229/0.8)]">
-          <div aria-hidden className="absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/15 blur-xl" />
-          <div className="relative flex items-center gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/20">
-              <InfinityIcon className="h-5 w-5" strokeWidth={2.25} aria-hidden />
-            </span>
-            <div className="leading-tight">
-              <p className="text-[15px] font-bold">Total Plan</p>
-              <p className="text-xs text-white/85">All features unlocked</p>
-            </div>
-          </div>
-        </div>
+      {/* Settings sits just above the account */}
+      <div className={`space-y-2 pb-3 ${collapsed ? "px-2" : "px-3"}`}>
+        <Link href="/settings" onClick={close} aria-current={onSettings ? "page" : undefined} title="Settings" className={item}>
+          <Settings className="h-[19px] w-[19px] shrink-0" strokeWidth={1.9} aria-hidden />
+          {label("Settings")}
+        </Link>
 
-        <div className="relative flex items-center gap-3 rounded-2xl px-2 py-1.5">
-          <span className="bg-grad grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold text-white" aria-hidden>
-            {initials}
-          </span>
-          <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate text-sm font-bold">{user?.name || "Your account"}</p>
-            <p className="truncate text-xs text-muted" title={user?.email}>
-              {user?.email}
-            </p>
-          </div>
+        <div className={`relative flex items-center rounded-2xl border-t border-line pt-3 ${collapsed ? "justify-center" : "gap-3 px-2"}`}>
           <button
-            onClick={() => setShowMenu(!showMenu)}
-            aria-label="Account menu"
-            aria-expanded={showMenu}
-            className="grid h-9 w-9 place-items-center rounded-xl text-muted hover:bg-brand-soft hover:text-fg"
+            onClick={() => collapsed && setShowMenu((s) => !s)}
+            aria-label={collapsed ? "Account menu" : undefined}
+            className="bg-grad grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
+            tabIndex={collapsed ? 0 : -1}
           >
-            <MoreVertical className="h-4 w-4" strokeWidth={1.9} aria-hidden />
+            {initials}
           </button>
-          {showMenu && (
-            <div className="card absolute bottom-full right-0 z-10 mb-2 w-44 p-1.5">
-              <Link
-                href="/settings"
-                onClick={() => {
-                  setShowMenu(false);
-                  close();
-                }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted hover:bg-brand-soft hover:text-fg"
+          {!collapsed && (
+            <>
+              <div className="min-w-0 flex-1 leading-tight">
+                <p className="truncate text-sm font-bold">{user?.name || "Your account"}</p>
+                <p className="truncate text-xs text-muted" title={user?.email}>
+                  {user?.email}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                aria-label="Account menu"
+                aria-expanded={showMenu}
+                className="grid h-9 w-9 place-items-center rounded-xl text-muted hover:bg-brand-soft hover:text-fg"
               >
-                <Sparkles className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-                Preferences
-              </Link>
+                <MoreVertical className="h-4 w-4" strokeWidth={1.9} aria-hidden />
+              </button>
+            </>
+          )}
+          {showMenu && (
+            <div className={`card absolute bottom-full z-10 mb-2 w-44 p-1.5 ${collapsed ? "left-2" : "right-0"}`}>
               <button
                 onClick={() => {
                   setShowMenu(false);

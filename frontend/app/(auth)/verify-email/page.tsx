@@ -112,7 +112,7 @@ export default function VerifyEmailPage() {
         </Link>
       }
     >
-      <div className="space-y-5">
+      <div className="space-y-4">
         <FormError>{error}</FormError>
         <FormNotice>{notice}</FormNotice>
         <div>

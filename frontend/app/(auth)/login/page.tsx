@@ -45,7 +45,7 @@ export default function LoginPage() {
       }
     >
       <RedirectIfSignedIn disabled={busy} />
-      <form onSubmit={submit} className="space-y-5" noValidate={false}>
+      <form onSubmit={submit} className="space-y-4" noValidate={false}>
         <Suspense fallback={null}>
           <ResetNotice />
         </Suspense>

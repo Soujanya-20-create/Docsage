@@ -51,7 +51,7 @@ export default function RegisterPage() {
       }
     >
       <RedirectIfSignedIn disabled={busy} />
-      <form onSubmit={submit} className="space-y-5">
+      <form onSubmit={submit} className="space-y-4">
         <FormError>{error}</FormError>
         {waking && <p className="rounded-xl bg-brand-soft p-3 text-sm text-muted">The server is waking up. This can take up to a minute.</p>}
         <TextField label="Name" autoComplete="name" required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />

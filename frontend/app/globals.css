@@ -316,3 +316,25 @@ body {
     radial-gradient(ellipse 70% 45% at 50% 18%, color-mix(in srgb, var(--brand-solid) 10%, transparent), transparent 70%),
     radial-gradient(ellipse 50% 40% at 85% 85%, color-mix(in srgb, var(--brand-2) 9%, transparent), transparent 70%);
 }
+
+/* ---- auth screens: a deep gradient panel that never forces the page to scroll ----------------- */
+.auth-panel { background: linear-gradient(155deg, #16226f 0%, #3a35c9 52%, #6a3fe0 100%); }
+.auth-demo { display: none; }
+.auth-stats { display: grid; }
+@media (min-height: 830px) {
+  .auth-demo { display: block; }
+
+}
+
+/* ---- closing call to action and footer ------------------------------------------------------ */
+.cta-vivid { background: linear-gradient(120deg, #1f4fe0 0%, #6a3fe0 45%, #c03fa8 100%); }
+.footer-deep { background: linear-gradient(180deg, #121a52 0%, #0b1033 100%); }
+.footer-deep a { color: inherit; }
+
+/* hero: soft aurora ribbons behind the headline */
+.hero-aurora {
+  background:
+    radial-gradient(55rem 26rem at 85% -5%, color-mix(in srgb, var(--brand-2) 22%, transparent), transparent 70%),
+    radial-gradient(45rem 24rem at 0% 20%, color-mix(in srgb, var(--brand-solid) 18%, transparent), transparent 70%),
+    radial-gradient(40rem 20rem at 50% 105%, color-mix(in srgb, #e5487a 12%, transparent), transparent 70%);
+}
