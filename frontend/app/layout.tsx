@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import Script from "next/script";
 import { AuthProvider } from "@/lib/auth";
 import { site } from "@/lib/site";
 import "./globals.css";
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title, description: site.description },
 };
 
-export const viewport: Viewport = { themeColor: "#f6f8fc" };
+export const viewport: Viewport = { themeColor: "#f3f5ff" };
 
 // Applies a saved light/dark choice before first paint so there is no flash.
 const THEME_SCRIPT = `try{var t=JSON.parse(localStorage.getItem("docsage:prefs")||"{}").theme;document.documentElement.dataset.theme=t==="dark"||t==="system"?t:"light"}catch(e){}`;
@@ -30,10 +31,8 @@ const THEME_SCRIPT = `try{var t=JSON.parse(localStorage.getItem("docsage:prefs")
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`} data-theme="light" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
-      </head>
       <body>
+        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

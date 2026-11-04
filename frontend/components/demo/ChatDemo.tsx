@@ -90,14 +90,10 @@ export default function ChatDemo({ className = "" }: { className?: string }) {
   const answerDone = view.a >= ANSWER_TEXT.length;
   const activeStep = TIMELINE.findIndex((t) => t.toLowerCase() === view.stage);
 
-  const answerParts = (() => {
-    let left = view.a;
-    return ANSWER.map((part) => {
-      const take = Math.max(0, Math.min(part.length, left));
-      left -= take;
-      return part.slice(0, take);
-    });
-  })();
+  const answerParts = ANSWER.map((part, i) => {
+    const before = ANSWER.slice(0, i).reduce((n, p) => n + p.length, 0);
+    return part.slice(0, Math.max(0, Math.min(part.length, view.a - before)));
+  });
 
   return (
     <div ref={ref} className={`card relative w-full max-w-[560px] overflow-hidden ${className}`} role="img" aria-label="Animated preview: a document is uploaded, a question is asked, DocSage analyzes it and answers with a citation, then the answer is shared.">

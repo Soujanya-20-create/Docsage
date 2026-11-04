@@ -75,6 +75,11 @@ class Settings(BaseSettings):
     email_from: str = "DocSage <onboarding@resend.dev>"
     require_email_verification: bool = False
 
+    # Optional demo account created on startup (development only). Set both to enable; leave empty to disable.
+    demo_email: str = ""
+    demo_password: str = ""
+    demo_name: str = "Demo User"
+
     sentry_dsn: str = ""
 
     # LLM providers are tried in this order; any one key is enough.

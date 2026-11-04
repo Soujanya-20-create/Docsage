@@ -124,7 +124,7 @@ export default function WorkspacePage() {
           </div>
         </div>
         {/* decorative folder stack, pure CSS */}
-        <div aria-hidden className="pointer-events-none absolute -right-6 top-1/2 hidden h-64 w-[26rem] -translate-y-1/2 sm:block">
+        <div aria-hidden className="pointer-events-none absolute -right-6 top-1/2 hidden h-64 w-[26rem] -translate-y-1/2 xl:block">
           <div className="absolute right-24 top-6 h-44 w-56 rotate-[-9deg] rounded-3xl bg-gradient-to-br from-[#7aa5ff] to-[#4f6ff0] opacity-80 shadow-xl" />
           <div className="absolute right-14 top-10 h-44 w-56 rotate-[-3deg] rounded-3xl bg-gradient-to-br from-[#9d8bff] to-[#6a52f0] opacity-85 shadow-xl" />
           <div className="glass absolute right-6 top-14 grid h-44 w-56 rotate-[4deg] place-items-center rounded-3xl">

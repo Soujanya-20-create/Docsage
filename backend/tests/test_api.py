@@ -78,3 +78,40 @@ def test_asking_with_no_documents_says_so_and_is_saved(client):
     messages = client.get(f"/api/chats/{chat['id']}/messages", headers=headers).json()
     assert [m["role"] for m in messages] == ["user", "assistant"]
     assert client.get("/api/chats", headers=headers).json()[0]["title"].startswith("What is the refund")
+
+
+def test_demo_account_is_seeded_from_env_and_can_sign_in(client, monkeypatch):
+    import asyncio
+
+    from docsage.config import settings
+    from docsage.services.demo import ensure_demo_user
+
+    monkeypatch.setattr(settings, "demo_email", "Demo.Seed@Example.com")
+    monkeypatch.setattr(settings, "demo_password", "demo-pass-for-tests-1")
+    asyncio.run(ensure_demo_user())
+    asyncio.run(ensure_demo_user())  # idempotent: a second start must not fail or duplicate
+
+    ok = client.post("/api/auth/login", json={"email": "demo.seed@example.com", "password": "demo-pass-for-tests-1"})
+    assert ok.status_code == 200 and ok.json()["access_token"]
+    me = client.get("/api/auth/me", headers={"Authorization": f"Bearer {ok.json()['access_token']}"})
+    assert me.json()["email_verified"] is True
+
+    # A changed DEMO_PASSWORD takes effect on the next start.
+    monkeypatch.setattr(settings, "demo_password", "rotated-demo-pass-2")
+    asyncio.run(ensure_demo_user())
+    assert client.post("/api/auth/login", json={"email": "demo.seed@example.com", "password": "demo-pass-for-tests-1"}).status_code == 401
+    assert client.post("/api/auth/login", json={"email": "demo.seed@example.com", "password": "rotated-demo-pass-2"}).status_code == 200
+
+
+def test_demo_account_is_never_seeded_in_production(client, monkeypatch):
+    import asyncio
+
+    from docsage.config import settings
+    from docsage.services.demo import ensure_demo_user
+
+    monkeypatch.setattr(settings, "demo_email", "prod.demo@example.com")
+    monkeypatch.setattr(settings, "demo_password", "demo-pass-for-tests-1")
+    monkeypatch.setattr(settings, "environment", "production")
+    asyncio.run(ensure_demo_user())
+    r = client.post("/api/auth/login", json={"email": "prod.demo@example.com", "password": "demo-pass-for-tests-1"})
+    assert r.status_code == 401

@@ -20,11 +20,11 @@ export function PageHeader({ title, children, eyebrow }: { title: ReactNode; chi
       <div className="bg-wash absolute inset-0 -z-10" aria-hidden />
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         {eyebrow && (
-          <motion.p {...fade(0)} className="mb-4 text-sm font-semibold text-brand">
+          <motion.p {...fade(0)} className="glass mb-5 inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-semibold text-brand">
             {eyebrow}
           </motion.p>
         )}
-        <motion.h1 {...fade(0.05)} className="max-w-3xl text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+        <motion.h1 {...fade(0.05)} className="max-w-3xl text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
           {title}
         </motion.h1>
         <motion.p {...fade(0.15)} className="mt-5 max-w-2xl text-lg leading-relaxed text-muted">

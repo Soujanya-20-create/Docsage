@@ -148,6 +148,7 @@ Set in `backend/.env`; see [.env.example](backend/.env.example).
 |---|---|---|
 | `DATABASE_URL` | SQLite file | SQLite or `postgresql+asyncpg://…` (then `pip install asyncpg`) |
 | `SECRET_KEY` | dev placeholder | JWT signing key. **Set your own.** |
+| `DEMO_EMAIL`, `DEMO_PASSWORD` | empty (off) | Creates one verified sign-in on startup for local use. Never shown in the UI, ignored when `ENVIRONMENT=production`. |
 | `GROQ_API_KEY` / `CEREBRAS_API_KEY` / `OPENROUTER_API_KEY` | empty | Any one is enough |
 | `LLM_PROVIDER_ORDER` | `groq,cerebras,openrouter` | Fallback order |
 | `OPENROUTER_VISION_MODELS` | 3 free models | Image OCR when Tesseract is absent |

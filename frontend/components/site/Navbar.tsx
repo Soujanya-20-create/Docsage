@@ -20,7 +20,7 @@ export function Navbar() {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-40 transition-colors duration-300 ${
-        scrolled || open ? "border-b border-line bg-bg/85 backdrop-blur-xl" : "border-b border-transparent"
+        scrolled || open ? "border-b border-line bg-bg/92 shadow-[0_8px_24px_-18px_rgb(60_70_170/0.35)] backdrop-blur-2xl" : "border-b border-transparent"
       }`}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -40,7 +40,7 @@ export function Navbar() {
             >
               {item.label}
               {pathname === item.href && (
-                <motion.span layoutId="nav-underline" className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-brand-solid" />
+                <motion.span layoutId="nav-underline" className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-grad" />
               )}
             </Link>
           ))}

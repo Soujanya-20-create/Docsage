@@ -65,7 +65,7 @@ export default function FeaturesPage() {
                   <ChevronDown className="h-4 w-4 text-muted" strokeWidth={2} aria-hidden />
                 </div>
                 <div className="space-y-2 border-t border-line p-3 text-xs leading-relaxed">
-                  <p className="rounded-lg bg-bg p-2"><span className="mr-2 font-semibold text-brand">p.3</span>The Tenant shall keep the premises in good repair and shall not make structural alterations without the Landlord's written consent.</p>
+                  <p className="rounded-lg bg-bg p-2"><span className="mr-2 font-semibold text-brand">p.3</span>The Tenant shall keep the premises in good repair and shall not make structural alterations without the Landlord&apos;s written consent.</p>
                   <p className="rounded-lg bg-bg p-2"><span className="mr-2 font-semibold text-brand">p.4</span>Rent is payable monthly in advance on the first day of each calendar month.</p>
                 </div>
               </div>

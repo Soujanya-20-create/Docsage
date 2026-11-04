@@ -13,6 +13,7 @@ import { ChatsProvider, useChats } from "@/lib/chats";
 import Link from "next/link";
 
 function VerifyBanner({ required }: { required: boolean }) {
+  const router = useRouter();
   const [state, setState] = useState<"idle" | "sending" | "error">("idle");
   const [message, setMessage] = useState("");
 
@@ -20,10 +21,10 @@ function VerifyBanner({ required }: { required: boolean }) {
     setState("sending");
     try {
       await api("/auth/resend-verification", { method: "POST" });
-      window.location.assign("/verify-email");
+      router.push("/verify-email");
     } catch (err) {
       // A 429 just means a code was sent a moment ago: go and enter it.
-      if (err instanceof ApiError && err.status === 429) return void window.location.assign("/verify-email");
+      if (err instanceof ApiError && err.status === 429) return void router.push("/verify-email");
       setMessage(err instanceof ApiError ? err.message : "Could not send the code.");
       setState("error");
     }

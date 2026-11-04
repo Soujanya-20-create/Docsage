@@ -14,20 +14,20 @@ export function CtaBand({
 }) {
   return (
     <section className="px-4 pb-24 sm:px-6">
-      <Reveal className="relative mx-auto max-w-6xl overflow-hidden rounded-[var(--radius-card)] bg-ink px-6 py-16 text-center sm:px-12 sm:py-20">
+      <Reveal className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-grad px-6 py-16 text-center shadow-[0_30px_60px_-30px_rgb(79_70_229/0.7)] sm:px-12 sm:py-20">
         <div
           className="pointer-events-none absolute inset-0 opacity-60"
-          style={{ background: "radial-gradient(60% 80% at 80% 0%, rgb(47 111 237 / 0.45), transparent 70%)" }}
+          style={{ background: "radial-gradient(50% 70% at 85% 0%, rgb(255 255 255 / 0.28), transparent 70%)" }}
           aria-hidden
         />
-        <h2 className="relative mx-auto max-w-2xl text-3xl font-semibold tracking-tight text-bg sm:text-4xl">{title}</h2>
-        <p className="relative mx-auto mt-4 max-w-xl text-base leading-relaxed text-bg/75">{text}</p>
+        <h2 className="relative mx-auto max-w-2xl text-3xl font-extrabold tracking-tight text-white sm:text-4xl">{title}</h2>
+        <p className="relative mx-auto mt-4 max-w-xl text-base leading-relaxed text-white/85">{text}</p>
         <div className="relative mt-8 flex justify-center">
-          <Link href="/register" className="btn btn-lg bg-bg text-fg hover:bg-bg/90">
+          <Link href="/register" className="btn btn-lg !bg-white !bg-none !text-[#2554e8]">
             Get started <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
           </Link>
         </div>
-        <p className="relative mt-6 inline-flex items-center gap-2 text-sm text-bg/70">
+        <p className="relative mt-6 inline-flex items-center gap-2 text-sm text-white/80">
           <ShieldCheck className="h-4 w-4" strokeWidth={1.75} aria-hidden /> Delete your account and everything in it at any time.
         </p>
       </Reveal>

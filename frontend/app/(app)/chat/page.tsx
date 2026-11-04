@@ -77,7 +77,7 @@ export default function ChatPage() {
     setMessages([]);
     setQuestion("");
     setError("");
-    uploads.items.length && uploads.items.forEach((u) => uploads.remove(u.key));
+    uploads.items.forEach((u) => uploads.remove(u.key));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetKey]);
 

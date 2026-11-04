@@ -41,8 +41,8 @@ export function FeatureBento() {
     <div className="mx-auto grid max-w-6xl gap-4 px-4 sm:px-6 md:grid-cols-6">
       {/* 1. hybrid search, wide, tinted with the brand colour */}
       <Cell className="md:col-span-4">
-        <div className="card relative h-full overflow-hidden bg-brand-soft p-7 sm:p-9">
-          <span className="inline-grid h-10 w-10 place-items-center rounded-xl bg-card text-brand">
+        <div className="card hero-banner relative h-full overflow-hidden p-7 sm:p-9">
+          <span className="tint-ico t-blue inline-grid h-11 w-11 place-items-center rounded-2xl">
             <Search className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <h3 className="mt-5 text-2xl font-semibold tracking-tight">Two kinds of search, merged</h3>
@@ -62,15 +62,15 @@ export function FeatureBento() {
 
       {/* 2. citations, tall, dark panel */}
       <Cell className="md:col-span-2" delay={0.08}>
-        <div className="card relative h-full overflow-hidden bg-ink p-7 text-bg sm:p-8">
-          <span className="inline-grid h-10 w-10 place-items-center rounded-xl bg-bg/10 text-bg">
+        <div className="card bg-grad relative h-full overflow-hidden border-0 p-7 text-white sm:p-8">
+          <span className="inline-grid h-11 w-11 place-items-center rounded-2xl bg-white/20 text-white">
             <Layers className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <h3 className="mt-5 text-2xl font-semibold tracking-tight">Every claim has a page</h3>
-          <p className="mt-2 text-[0.95rem] leading-relaxed text-bg/75">File, page number and the exact excerpt travel with each answer.</p>
-          <div className="mt-6 rounded-xl bg-bg/10 p-3 text-xs leading-relaxed text-bg/85">
-            ...payment is due within <mark className="rounded bg-brand-solid/60 px-0.5 text-bg">thirty (30) days</mark> of the invoice date...
-            <p className="mt-2 font-semibold text-bg">Services Agreement.pdf, p.6</p>
+          <p className="mt-2 text-[0.95rem] leading-relaxed text-white/85">File, page number and the exact excerpt travel with each answer.</p>
+          <div className="mt-6 rounded-2xl bg-white/15 p-3.5 text-xs leading-relaxed text-white/90">
+            ...payment is due within <mark className="rounded bg-white/35 px-0.5 text-white">thirty (30) days</mark> of the invoice date...
+            <p className="mt-2 font-semibold text-white">Services Agreement.pdf, p.6</p>
           </div>
         </div>
       </Cell>
@@ -78,7 +78,7 @@ export function FeatureBento() {
       {/* 3. OCR */}
       <Cell className="md:col-span-2" delay={0.04}>
         <div className="card h-full p-7 sm:p-8">
-          <span className="inline-grid h-10 w-10 place-items-center rounded-xl bg-brand-soft text-brand">
+          <span className="tint-ico t-amber inline-grid h-11 w-11 place-items-center rounded-2xl">
             <ScanText className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <h3 className="mt-5 text-xl font-semibold tracking-tight">Scans and photos work</h3>
@@ -89,7 +89,7 @@ export function FeatureBento() {
       {/* 4. provider fallback */}
       <Cell className="md:col-span-2" delay={0.12}>
         <div className="card h-full p-7 sm:p-8">
-          <span className="inline-grid h-10 w-10 place-items-center rounded-xl bg-brand-soft text-brand">
+          <span className="tint-ico t-violet inline-grid h-11 w-11 place-items-center rounded-2xl">
             <Workflow className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <h3 className="mt-5 text-xl font-semibold tracking-tight">Never stuck on one model</h3>
@@ -107,8 +107,8 @@ export function FeatureBento() {
 
       {/* 5. privacy */}
       <Cell className="md:col-span-2" delay={0.2}>
-        <div className="card h-full bg-gradient-to-br from-brand-soft to-card p-7 sm:p-8">
-          <span className="inline-grid h-10 w-10 place-items-center rounded-xl bg-card text-brand">
+        <div className="card tint t-green h-full p-7 sm:p-8">
+          <span className="tint-ico t-green inline-grid h-11 w-11 place-items-center rounded-2xl">
             <Lock className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </span>
           <h3 className="mt-5 text-xl font-semibold tracking-tight">Private by default</h3>

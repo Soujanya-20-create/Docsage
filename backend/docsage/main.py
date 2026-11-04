@@ -12,6 +12,7 @@ from .db import SessionLocal, run_migrations
 from .middleware import SecurityHeadersMiddleware
 from .routers import auth, chats, documents, stats
 from .services.ingest import fail_interrupted_documents, rebuild_vector_index
+from .services.demo import ensure_demo_user
 from .services.llm import configured_providers
 from .services.ocr import tesseract_available
 
@@ -29,6 +30,7 @@ async def lifespan(app: FastAPI):
     Path(settings.upload_dir).mkdir(parents=True, exist_ok=True)
     if settings.auto_migrate:
         await run_migrations()
+    await ensure_demo_user()
     await fail_interrupted_documents()
     reindex = asyncio.create_task(rebuild_vector_index())
     yield
