@@ -18,6 +18,7 @@ RUN pip install -r requirements.txt
 RUN python -c "from fastembed import TextEmbedding; TextEmbedding('BAAI/bge-small-en-v1.5')"
 
 COPY docsage ./docsage
+COPY migrations ./migrations
 RUN useradd --create-home app && mkdir -p /app/uploads && chown -R app /app /opt/models
 USER app
 
