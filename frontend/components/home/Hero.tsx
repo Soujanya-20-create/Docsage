@@ -25,7 +25,7 @@ export function Hero() {
             {HEADLINE.map((word, i) => (
               <span key={i} className="inline-block overflow-hidden pb-1 align-bottom">
                 <motion.span
-                  className={`inline-block ${i >= 4 ? "text-brand" : ""}`}
+                  className={`inline-block ${i >= 4 ? "text-grad" : ""}`}
                   initial={reduce ? false : { y: "110%" }}
                   animate={{ y: 0 }}
                   transition={{ duration: 0.8, delay: 0.08 * i, ease: [0.16, 1, 0.3, 1] }}

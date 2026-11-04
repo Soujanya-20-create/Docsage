@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field, field_validator
 
+from .config import settings
 from .security import password_problem
 
 
@@ -46,6 +47,17 @@ class UserOut(ORM):
     email: str
     name: str
     email_verified: bool
+
+    # Server settings the app shell needs: whether confirming is required, and whether a code can be emailed at all.
+    @computed_field
+    @property
+    def verification_required(self) -> bool:
+        return settings.require_email_verification
+
+    @computed_field
+    @property
+    def email_enabled(self) -> bool:
+        return settings.email_configured
 
 
 class EmailIn(BaseModel):

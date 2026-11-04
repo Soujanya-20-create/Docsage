@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import Link from "next/link";
 import { ThinkingOrb } from "thinking-orbs";
-import { Check, Copy, Sparkles, UploadCloud, Volume2, VolumeX } from "lucide-react";
+import { CalendarClock, Check, Copy, ListChecks, Scale, Sparkles, UploadCloud, Volume2, VolumeX } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import { Composer } from "@/components/chat/Composer";
 import { AnswerMarkdown, ShareButton, SourceChips } from "@/components/chat/Message";
 import { ApiError, api, ask, json, type Chat, type Doc, type Message } from "@/lib/api";
@@ -12,11 +13,11 @@ import { usePrefs } from "@/lib/prefs";
 import { useReadAloud } from "@/lib/speech";
 import { useUploads } from "@/lib/upload";
 
-const SUGGESTIONS = [
-  "Summarize this document in five bullet points",
-  "What are the key dates and deadlines?",
-  "List the obligations and who owns each one",
-  "Find anything about payment terms or penalties",
+const STARTERS = [
+  { title: "Summarize", hint: "Turn long files into clear summaries", prompt: "Summarize this document in five bullet points", icon: Sparkles, tone: "t-violet" },
+  { title: "Find Key Dates", hint: "Deadlines, renewals and milestones", prompt: "What are the key dates and deadlines?", icon: CalendarClock, tone: "t-blue" },
+  { title: "Extract Obligations", hint: "Who owns what, in a list", prompt: "List the obligations and who owns each one", icon: ListChecks, tone: "t-green" },
+  { title: "Check Terms", hint: "Payment terms and penalties", prompt: "Find anything about payment terms or penalties", icon: Scale, tone: "t-amber" },
 ];
 
 const iconBtn =
@@ -45,6 +46,8 @@ function CopyButton({ text }: { text: string }) {
 export default function ChatPage() {
   const { activeId, setActiveId, resetKey, reload, pendingQuestion, setPendingQuestion } = useChats();
   const [prefs] = usePrefs();
+  const { user } = useAuth();
+  const firstName = (user?.name || "there").split(/\s+/)[0];
   const [messages, setMessages] = useState<Message[]>([]);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
@@ -157,13 +160,16 @@ export default function ChatPage() {
     [question, busy, activeId, setActiveId, uploads, speech, prefs.autoRead, reload],
   );
 
-  // A question typed on the dashboard arrives here and is sent straight away.
+  // A question typed on the dashboard arrives here and is sent straight away. The ref keeps a second run of this
+  // effect (StrictMode, or a re-render before the cleared value lands) from sending it again into a new empty chat.
+  const handedOff = useRef<string | null>(null);
   useEffect(() => {
-    if (pendingQuestion) {
-      const q = pendingQuestion;
+    if (pendingQuestion && handedOff.current !== pendingQuestion) {
+      handedOff.current = pendingQuestion;
       setPendingQuestion(null);
-      void send(q);
+      void send(pendingQuestion);
     }
+    if (!pendingQuestion) handedOff.current = null;
   }, [pendingQuestion, setPendingQuestion, send]);
 
   /* ---- drag and drop anywhere on the screen ---- */
@@ -219,42 +225,54 @@ export default function ChatPage() {
       )}
 
       {empty ? (
-        <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-4 py-10">
-          <div className="w-full max-w-3xl">
+        <div className="chat-empty-bg flex flex-1 flex-col items-center overflow-y-auto px-4 py-8 sm:py-12">
+          <div className="my-auto w-full max-w-4xl">
             <div className="text-center">
-              <div className="mx-auto grid h-24 w-24 place-items-center">
-                <ThinkingOrb state="breathing" size={64} theme="auto" aria-label="DocSage is ready" />
+              <div className="relative mx-auto grid h-28 w-28 place-items-center">
+                <span aria-hidden className="orb-halo" />
+                <span className="glass relative grid h-24 w-24 place-items-center rounded-full">
+                  <ThinkingOrb state="breathing" size={64} theme="auto" aria-label="DocSage is ready" />
+                </span>
               </div>
-              <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">What would you like to know?</h1>
-              <p className="mx-auto mt-2 max-w-md text-[0.95rem] text-muted">
+              <h1 className="mt-6 text-3xl font-extrabold tracking-tight sm:text-5xl">
+                Hello, <span className="text-grad">{firstName}</span> <span aria-hidden>👋</span>
+              </h1>
+              <p className="mx-auto mt-3 max-w-xl text-[0.98rem] leading-relaxed text-muted">
                 {readyDocs === 0 ? (
                   <>
-                    Attach a document with the paperclip, drop one anywhere on this screen, or{" "}
+                    Your AI document analyst. Attach a file with the + button, drop one anywhere on this screen, or{" "}
                     <Link href="/documents" className="font-semibold text-brand hover:underline">
                       open your library
                     </Link>
                     .
                   </>
                 ) : (
-                  <>Ask about {readyDocs === null ? "your documents" : `your ${readyDocs} document${readyDocs === 1 ? "" : "s"}`}. Answers cite the page they came from.</>
+                  <>
+                    Your AI document analyst. Ask about {readyDocs === null ? "your documents" : `your ${readyDocs} document${readyDocs === 1 ? "" : "s"}`} and get answers that cite the page they came from.
+                  </>
                 )}
               </p>
             </div>
-            <div className="mt-8">{composer}</div>
-            <ul className="mt-6 grid gap-2.5 sm:grid-cols-2">
-              {SUGGESTIONS.map((s) => (
-                <li key={s}>
+
+            <ul className="mt-9 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+              {STARTERS.map(({ title, hint, prompt, icon: Icon, tone }) => (
+                <li key={title}>
                   <button
                     type="button"
-                    onClick={() => setQuestion(s)}
-                    className="flex w-full items-start gap-2.5 rounded-2xl border border-line bg-card px-4 py-3 text-left text-sm text-muted transition-colors hover:border-brand hover:text-fg"
+                    onClick={() => setQuestion(prompt)}
+                    className="glass lift flex h-full w-full flex-col items-center gap-2.5 rounded-3xl px-3 py-5 text-center"
                   >
-                    <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" strokeWidth={1.75} aria-hidden />
-                    {s}
+                    <span className={`tint-ico ${tone} grid h-12 w-12 place-items-center rounded-2xl`}>
+                      <Icon className="h-6 w-6" strokeWidth={1.8} aria-hidden />
+                    </span>
+                    <span className="text-sm font-bold">{title}</span>
+                    <span className="text-xs leading-snug text-muted">{hint}</span>
                   </button>
                 </li>
               ))}
             </ul>
+
+            <div className="mx-auto mt-8 max-w-3xl">{composer}</div>
             {error && (
               <p role="alert" className="mt-4 text-center text-sm text-danger">
                 {error}
@@ -285,14 +303,14 @@ export default function ChatPage() {
                 const id = `m${m.id}`;
                 return m.role === "user" ? (
                   <div key={m.id} className="flex justify-end">
-                    <p className="max-w-[85%] whitespace-pre-wrap rounded-3xl bg-brand-solid px-4 py-2.5 text-[0.95rem] leading-relaxed text-brand-fg">{m.content}</p>
+                    <p className="bg-grad max-w-[85%] whitespace-pre-wrap rounded-3xl rounded-br-lg px-5 py-3 text-[0.95rem] leading-relaxed text-brand-fg shadow-[0_12px_24px_-14px_rgb(79_70_229/0.7)]">{m.content}</p>
                   </div>
                 ) : (
                   <div key={m.id} className="flex gap-3">
-                    <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-full border border-line bg-card">
-                      <Sparkles className="h-4 w-4 text-brand" strokeWidth={1.75} aria-hidden />
+                    <span className="tint-ico t-violet mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-full">
+                      <Sparkles className="h-4 w-4" strokeWidth={1.9} aria-hidden />
                     </span>
-                    <div className="min-w-0 flex-1 text-[0.95rem]">
+                    <div className="glass min-w-0 flex-1 rounded-3xl rounded-tl-lg px-5 py-3.5 text-[0.95rem]">
                       {writing && !m.content ? (
                         <p className="flex items-center gap-2.5 py-1.5 text-sm text-muted" role="status">
                           <ThinkingOrb state={m.sources.length ? "composing" : "searching"} size={20} theme="auto" aria-label="Working" />

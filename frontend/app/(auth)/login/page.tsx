@@ -24,7 +24,7 @@ export default function LoginPage() {
     setBusy(true);
     try {
       await login(email.trim(), password);
-      router.replace("/dashboard");
+      router.replace("/workspace");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not sign in. Check your connection and try again.");
       setBusy(false);

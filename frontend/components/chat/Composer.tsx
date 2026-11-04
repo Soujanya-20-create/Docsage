@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { AlertCircle, ArrowUp, CheckCircle2, FileText, FolderOpen, Loader2, Mic, MicOff, Paperclip, Square, UploadCloud, X } from "lucide-react";
-import { MetalFx } from "metal-fx";
+import { AlertCircle, CheckCircle2, FileText, FolderOpen, Loader2, Mic, MicOff, Plus, SendHorizontal, Square, UploadCloud, X } from "lucide-react";
 import { VoiceBeam, useMicrophone } from "voice-glow";
 import { api, type Doc } from "@/lib/api";
 import { usePrefs } from "@/lib/prefs";
@@ -119,7 +118,6 @@ export function Composer({
   placeholder?: string;
 }) {
   const [prefs] = usePrefs();
-  const metalTheme = prefs.theme === "dark" ? "dark" : "light";
   const area = useRef<HTMLTextAreaElement>(null);
   const file = useRef<HTMLInputElement>(null);
   const base = useRef("");
@@ -171,7 +169,7 @@ export function Composer({
   return (
     <div className="relative">
       <VoiceBeam stream={mic.stream} theme="auto" colorVariant="ocean" active={dictation.listening}>
-      <div className="rounded-3xl border border-line bg-card shadow-[var(--shadow)] transition-colors focus-within:border-brand">
+      <div className="glass rounded-[1.75rem] transition-shadow focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-solid)_22%,transparent),var(--shadow-lift)]">
         {uploads.items.length > 0 && (
           <ul className="flex flex-wrap gap-2 px-3 pt-3" aria-label="Attached files">
             {uploads.items.map((u) => (
@@ -205,9 +203,9 @@ export function Composer({
               }}
               aria-label="Attach files"
               aria-expanded={menu}
-              className="grid h-9 w-9 place-items-center rounded-full text-muted transition-colors hover:bg-brand-soft hover:text-fg"
+              className="grid h-10 w-10 place-items-center rounded-full bg-card text-brand shadow-sm ring-1 ring-line transition-colors hover:bg-brand-soft"
             >
-              <Paperclip className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />
+              <Plus className={`h-5 w-5 transition-transform ${menu ? "rotate-45" : ""}`} strokeWidth={2} aria-hidden />
             </button>
             {menu && (
               <div role="menu" className="card absolute bottom-full left-0 z-20 mb-2 w-56 p-1.5">
@@ -254,7 +252,7 @@ export function Composer({
             aria-label={dictation.listening ? "Stop voice input" : "Speak your question"}
             aria-pressed={dictation.listening}
             title={dictation.supported ? undefined : "Voice input is not supported in this browser. Try Chrome, Edge or Safari."}
-            className={`grid h-9 w-9 place-items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`grid h-10 w-10 place-items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
               dictation.listening ? "animate-pulse bg-danger text-white" : "text-muted hover:bg-brand-soft hover:text-fg"
             }`}
           >
@@ -270,17 +268,15 @@ export function Composer({
               <Square className="h-3.5 w-3.5 fill-current" aria-hidden />
             </button>
           ) : (
-            <MetalFx preset="chromatic" variant="circle" theme={metalTheme} innerShadow strength={canSend ? 1 : 0.45}>
-              <button
-                type="button"
-                onClick={onSend}
-                disabled={!canSend}
-                aria-label="Send"
-                className="grid h-9 w-9 place-items-center rounded-full text-fg transition-transform enabled:active:scale-95 disabled:cursor-not-allowed"
-              >
-                <ArrowUp className="h-[18px] w-[18px]" strokeWidth={2.25} aria-hidden />
-              </button>
-            </MetalFx>
+            <button
+              type="button"
+              onClick={onSend}
+              disabled={!canSend}
+              aria-label="Send"
+              className="bg-grad grid h-11 w-11 place-items-center rounded-full text-white shadow-[0_10px_22px_-8px_rgb(79_70_229/0.8)] transition-all enabled:hover:brightness-110 enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
+            >
+              <SendHorizontal className="h-5 w-5" strokeWidth={2} aria-hidden />
+            </button>
           )}
         </div>
       </div>

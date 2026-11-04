@@ -9,7 +9,7 @@ export function RedirectIfSignedIn({ disabled = false }: { disabled?: boolean })
   const { user } = useAuth();
   const router = useRouter();
   useEffect(() => {
-    if (user && !disabled) router.replace("/dashboard");
+    if (user && !disabled) router.replace("/workspace");
   }, [user, disabled, router]);
   return null;
 }

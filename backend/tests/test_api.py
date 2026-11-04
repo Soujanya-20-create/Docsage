@@ -19,6 +19,19 @@ def test_register_login_and_me(client):
     assert me.json()["email"] == "ada@example.com"
 
 
+def test_me_says_whether_email_confirmation_is_required_or_possible(client, monkeypatch):
+    from docsage.config import settings
+
+    headers = register(client, "flags@example.com")
+    me = client.get("/api/auth/me", headers=headers).json()
+    assert me["verification_required"] is False and me["email_enabled"] is False
+
+    monkeypatch.setattr(settings, "smtp_host", "smtp.example.com")
+    monkeypatch.setattr(settings, "require_email_verification", True)
+    me = client.get("/api/auth/me", headers=headers).json()
+    assert me["verification_required"] is True and me["email_enabled"] is True
+
+
 def test_duplicate_email_and_bad_password_are_rejected(client):
     register(client, "dup@example.com")
     again = client.post("/api/auth/register", json={"email": "dup@example.com", "password": "correct-horse-1", "accept_terms": True})

@@ -3,15 +3,16 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Loader2, MailWarning, Menu } from "lucide-react";
+import { Loader2, MailWarning, Menu, Search } from "lucide-react";
 import { Brand } from "@/components/Brand";
+import { SearchPalette, OPEN_SEARCH_EVENT } from "@/components/app/SearchPalette";
 import { Sidebar } from "@/components/app/Sidebar";
 import { ApiError, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { ChatsProvider, useChats } from "@/lib/chats";
 import Link from "next/link";
 
-function VerifyBanner() {
+function VerifyBanner({ required }: { required: boolean }) {
   const [state, setState] = useState<"idle" | "sending" | "error">("idle");
   const [message, setMessage] = useState("");
 
@@ -31,7 +32,7 @@ function VerifyBanner() {
   return (
     <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-line bg-brand-soft px-4 py-2 text-sm">
       <MailWarning className="h-4 w-4 shrink-0 text-brand" strokeWidth={1.75} aria-hidden />
-      <span className="text-fg">{state === "error" ? message : "Confirm your email to upload documents and ask questions."}</span>
+      <span className="text-fg">{state === "error" ? message : required ? "Confirm your email to upload documents and ask questions." : "Confirm your email so you can reset your password if you forget it."}</span>
       <Link href="/verify-email" className="font-semibold text-brand hover:underline">
         Enter code
       </Link>
@@ -48,9 +49,10 @@ function Shell({ children }: { children: ReactNode }) {
   const reduce = useReducedMotion();
 
   return (
-    <div className="flex h-[100dvh] bg-bg">
+    <div className="flex h-[100dvh]">
+      <SearchPalette />
       {/* Desktop sidebar */}
-      <aside className="hidden w-72 shrink-0 border-r border-line md:block">
+      <aside className="hidden w-[17.5rem] shrink-0 border-r border-line md:block">
         <Sidebar />
       </aside>
 
@@ -80,13 +82,21 @@ function Shell({ children }: { children: ReactNode }) {
       </AnimatePresence>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-3 border-b border-line bg-card px-3 py-2 md:hidden">
-          <button onClick={() => setDrawerOpen(true)} aria-label="Open menu" className="grid h-9 w-9 place-items-center rounded-lg hover:bg-brand-soft">
+        <header className="glass flex items-center gap-3 border-x-0 border-t-0 px-3 py-2.5 md:hidden">
+          <button onClick={() => setDrawerOpen(true)} aria-label="Open menu" className="grid h-10 w-10 place-items-center rounded-xl hover:bg-brand-soft">
             <Menu className="h-5 w-5" strokeWidth={1.75} aria-hidden />
           </button>
-          <Brand size={22} />
+          <Brand size={26} />
+          <button
+            onClick={() => window.dispatchEvent(new Event(OPEN_SEARCH_EVENT))}
+            aria-label="Search"
+            className="ml-auto grid h-10 w-10 place-items-center rounded-xl hover:bg-brand-soft"
+          >
+            <Search className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+          </button>
         </header>
-        {user && !user.email_verified && <VerifyBanner />}
+        {/* No banner when the server cannot email a code: there would be nothing to enter. */}
+        {user && !user.email_verified && user.email_enabled && <VerifyBanner required={user.verification_required} />}
         <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>

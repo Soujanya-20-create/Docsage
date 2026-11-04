@@ -26,11 +26,13 @@ function DocRow({ doc, onDelete }: { doc: Doc; onDelete: () => void }) {
 
   const Icon = doc.kind === "pdf" ? FileText : ImageIcon;
   return (
-    <li className="rounded-xl border border-line bg-card">
-      <div className="flex items-center gap-3 p-3">
-        <Icon className="h-5 w-5 shrink-0 text-brand" />
+    <li className="card">
+      <div className="flex items-center gap-4 p-4">
+        <span className={`tint-ico ${doc.kind === "pdf" ? "t-blue" : "t-amber"} grid h-12 w-12 shrink-0 place-items-center rounded-2xl`}>
+          <Icon className="h-6 w-6" strokeWidth={1.8} />
+        </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium">{doc.filename}</p>
+          <p className="truncate text-[0.95rem] font-bold">{doc.filename}</p>
           <p className="text-xs text-muted">
             {formatSize(doc.size)}
             {doc.status === "ready" && ` · ${doc.pages} page${doc.pages === 1 ? "" : "s"} · ${doc.chunk_count} chunks`}
@@ -39,18 +41,18 @@ function DocRow({ doc, onDelete }: { doc: Doc; onDelete: () => void }) {
         </div>
         <StatusBadge doc={doc} />
         {doc.status === "ready" && (
-          <button onClick={toggle} aria-label="Show extracted chunks" aria-expanded={open} className="rounded-lg p-1.5 text-muted hover:bg-line">
+          <button onClick={toggle} aria-label="Show extracted chunks" aria-expanded={open} className="rounded-xl p-2 text-muted hover:bg-brand-soft">
             <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
           </button>
         )}
-        <button onClick={onDelete} aria-label={`Delete ${doc.filename}`} className="rounded-lg p-1.5 text-muted hover:bg-line hover:text-danger">
+        <button onClick={onDelete} aria-label={`Delete ${doc.filename}`} className="rounded-xl p-2 text-muted hover:bg-brand-soft hover:text-danger">
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
       {open && (
         <div className="max-h-72 space-y-2 overflow-y-auto border-t border-line p-3">
           {chunks?.map((c) => (
-            <p key={c.id} className="rounded-lg bg-bg p-2 text-xs leading-relaxed">
+            <p key={c.id} className="rounded-xl bg-brand-soft/60 p-3 text-xs leading-relaxed">
               <span className="mr-2 font-semibold text-brand">p.{c.page}</span>{c.text}
             </p>
           )) ?? <p className="text-xs text-muted">Loading…</p>}
@@ -110,9 +112,16 @@ export default function DocumentsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl p-4 sm:p-8">
-      <h1 className="text-2xl font-bold">Documents</h1>
-      <p className="mt-1 text-sm text-muted">Upload PDFs or images, then ask questions about them in <Link href="/chat" className="font-semibold text-brand">Chat</Link>.</p>
+    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-8 sm:py-8">
+      <div className="flex items-center gap-4">
+        <span className="tint-ico t-blue grid h-12 w-12 place-items-center rounded-2xl">
+          <FileText className="h-6 w-6" strokeWidth={1.8} aria-hidden />
+        </span>
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight">My Documents</h1>
+          <p className="text-sm text-muted">Upload PDFs or images, then ask questions about them in <Link href="/chat" className="font-semibold text-brand">Chat</Link>.</p>
+        </div>
+      </div>
 
       <button
         type="button"
@@ -121,9 +130,11 @@ export default function DocumentsPage() {
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
         disabled={uploading}
-        className={`mt-6 flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed p-8 text-center transition-colors ${dragging ? "border-brand bg-brand/10" : "border-line hover:border-brand"}`}
+        className={`mt-8 flex w-full flex-col items-center gap-3 rounded-[1.75rem] border-2 border-dashed p-10 text-center transition-colors ${dragging ? "border-brand bg-brand-soft" : "border-brand/30 bg-brand-soft/50 hover:border-brand hover:bg-brand-soft"}`}
       >
-        {uploading ? <Loader2 className="h-8 w-8 animate-spin text-brand" /> : <UploadCloud className="h-8 w-8 text-brand" />}
+        <span className="bg-grad grid h-14 w-14 place-items-center rounded-2xl text-white shadow-lg">
+          {uploading ? <Loader2 className="h-7 w-7 animate-spin" /> : <UploadCloud className="h-7 w-7" />}
+        </span>
         <span className="font-semibold">{uploading ? "Uploading…" : "Drop files here or click to browse"}</span>
         <span className="text-xs text-muted">PDF, PNG, JPG or WebP</span>
       </button>
@@ -134,7 +145,7 @@ export default function DocumentsPage() {
 
       {error && <p role="alert" className="mt-4 text-sm text-danger">{error}</p>}
 
-      <ul className="mt-6 space-y-2">
+      <ul className="mt-8 space-y-3">
         {docs?.map((doc) => <DocRow key={doc.id} doc={doc} onDelete={() => remove(doc)} />)}
       </ul>
       {docs?.length === 0 && <p className="mt-6 text-center text-sm text-muted">No documents yet.</p>}

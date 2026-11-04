@@ -1,11 +1,10 @@
 "use client";
 
-import { useId, useMemo, useState, type PointerEvent } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { useEffect, useId, useMemo, useRef, useState, type PointerEvent } from "react";
+import { motion, useInView, useReducedMotion } from "motion/react";
 
 export type Point = { label: string; a: number; b: number };
 
-const W = 640;
 const H = 240;
 const PAD = { l: 34, r: 10, t: 14, b: 28 };
 
@@ -39,13 +38,30 @@ export function AreaChart({ data, aLabel, bLabel }: { data: Point[]; aLabel: str
   const reduce = useReducedMotion();
   const [hover, setHover] = useState<number | null>(null);
 
+  // Draw at the container's real width so axis text stays 11px instead of shrinking with the SVG on phones.
+  const box = useRef<HTMLDivElement>(null);
+  const [W, setW] = useState(640);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setW(Math.max(280, Math.round(entry.contentRect.width))));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const inView = useInView(box, { once: true });
+
   const { max, xs, ya, yb } = useMemo(() => {
     const max = niceMax(Math.max(1, ...data.flatMap((d) => [d.a, d.b])));
     const step = (W - PAD.l - PAD.r) / Math.max(1, data.length - 1);
     const y = (v: number) => PAD.t + (1 - v / max) * (H - PAD.t - PAD.b);
     const xs = data.map((_, i) => PAD.l + i * step);
     return { max, xs, ya: data.map((d) => y(d.a)), yb: data.map((d) => y(d.b)) };
-  }, [data]);
+  }, [data, W]);
+
+  // Label every few days (fewer on narrow screens) plus the last day, skipping a regular label that would crowd it.
+  const last = data.length - 1;
+  const every = Math.ceil(data.length / (W < 420 ? 3 : 5));
+  const labelled = (i: number) => i === last || (i % every === 0 && last - i >= 2);
 
   const line = smooth(xs.map((x, i) => [x, ya[i]]));
   const area = `${line} L${xs[xs.length - 1]},${H - PAD.b} L${xs[0]},${H - PAD.b} Z`;
@@ -63,7 +79,7 @@ export function AreaChart({ data, aLabel, bLabel }: { data: Point[]; aLabel: str
   const tip = hover !== null ? data[hover] : null;
 
   return (
-    <div className="relative">
+    <div ref={box} className="relative">
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="h-auto w-full touch-pan-y"
@@ -77,6 +93,19 @@ export function AreaChart({ data, aLabel, bLabel }: { data: Point[]; aLabel: str
             <stop offset="0%" stopColor="var(--brand-solid)" stopOpacity="0.28" />
             <stop offset="100%" stopColor="var(--brand-solid)" stopOpacity="0" />
           </linearGradient>
+          {/* The lines are revealed left to right by this clip. Animating pathLength instead would overwrite the dashes. */}
+          <clipPath id={`c${id}`}>
+            <motion.rect
+              x="0"
+              y="0"
+              width={W}
+              height={H}
+              style={{ originX: 0 }}
+              initial={reduce ? false : { scaleX: 0 }}
+              animate={inView ? { scaleX: 1 } : undefined}
+              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+            />
+          </clipPath>
         </defs>
 
         {ticks.map((t) => {
@@ -92,38 +121,18 @@ export function AreaChart({ data, aLabel, bLabel }: { data: Point[]; aLabel: str
         })}
 
         {data.map((d, i) =>
-          i % Math.ceil(data.length / 5) === 0 || i === data.length - 1 ? (
-            <text key={d.label} x={xs[i]} y={H - 8} textAnchor={i === 0 ? "start" : i === data.length - 1 ? "end" : "middle"} fontSize="11" fill="var(--muted)">
+          labelled(i) ? (
+            <text key={d.label} x={xs[i]} y={H - 8} textAnchor={i === 0 ? "start" : i === last ? "end" : "middle"} fontSize="11" fill="var(--muted)">
               {shortDay(d.label)}
             </text>
           ) : null,
         )}
 
-        <motion.path d={area} fill={`url(#g${id})`} initial={reduce ? false : { opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.9, delay: 0.3 }} />
-        <motion.path
-          d={lineB}
-          fill="none"
-          stroke="var(--muted)"
-          strokeWidth="1.75"
-          strokeDasharray="4 5"
-          strokeLinecap="round"
-          initial={reduce ? false : { pathLength: 0 }}
-          whileInView={{ pathLength: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-        />
-        <motion.path
-          d={line}
-          fill="none"
-          stroke="var(--brand-solid)"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          initial={reduce ? false : { pathLength: 0 }}
-          whileInView={{ pathLength: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-        />
+        <motion.path d={area} fill={`url(#g${id})`} initial={reduce ? false : { opacity: 0 }} animate={inView ? { opacity: 1 } : undefined} transition={{ duration: 0.9, delay: 0.3 }} />
+        <g clipPath={`url(#c${id})`}>
+          <path d={lineB} fill="none" stroke="var(--muted)" strokeWidth="1.75" strokeDasharray="4 5" strokeLinecap="round" />
+          <path d={line} fill="none" stroke="var(--brand-solid)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </g>
 
         {hover !== null && (
           <g pointerEvents="none">

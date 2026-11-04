@@ -1,66 +1,81 @@
 @import "tailwindcss";
 
 /*
- * DocSage design tokens. One accent (the logo blue), one neutral family, two themes that follow the
- * system setting. Shape rule: controls are 12px, containers are 20px, nothing else.
+ * DocSage design tokens. A blue-to-violet brand gradient on soft lavender surfaces, glassy cards with large radii,
+ * one neutral family, two themes. Shape rule: controls are 14px, containers are 24px, pills are full.
  */
 :root {
   color-scheme: light;
-  --bg: #f6f8fc;
+  --bg: #f3f5ff;
   --bg-raised: #ffffff;
-  --fg: #0b1226;
-  --muted: #5a6783;
+  --fg: #0c1330;
+  --muted: #5b6785;
   --card: #ffffff;
-  --line: #e1e7f1;
-  --brand: #1f5fe0;        /* accent used for text and icons */
-  --brand-solid: #1f5fe0;  /* accent used as a fill behind white text */
-  --brand-soft: #e6eefd;
+  --line: #e3e8f6;
+  --brand: #2554e8;        /* accent used for text and icons */
+  --brand-solid: #2f64f0;  /* accent used as a fill behind white text */
+  --brand-2: #7c4dff;      /* violet partner for gradients */
+  --brand-soft: #e9efff;
   --brand-fg: #ffffff;
+  --glass: rgb(255 255 255 / 0.72);
+  --glass-line: rgb(255 255 255 / 0.9);
+  --grad: linear-gradient(135deg, #2f64f0 0%, #5b5bf0 55%, #7c4dff 100%);
   --ink: #0b1f55;          /* the logo's navy */
   --danger: #c62828;
   --ok: #15803d;
   --warn: #b45309;
-  --shadow: 0 1px 2px rgb(15 30 80 / 0.05), 0 12px 32px -12px rgb(15 30 80 / 0.16);
-  --radius-ctl: 0.75rem;
-  --radius-card: 1.25rem;
+  --shadow: 0 1px 2px rgb(30 40 110 / 0.04), 0 14px 36px -14px rgb(60 70 170 / 0.22);
+  --shadow-lift: 0 2px 4px rgb(30 40 110 / 0.05), 0 22px 44px -16px rgb(60 70 170 / 0.32);
+  --radius-ctl: 0.875rem;
+  --radius-card: 1.5rem;
 }
 
 /* Light is the default. Dark applies only when chosen in Settings (data-theme="dark"), or when "System" is chosen and the device prefers dark. */
 @media (prefers-color-scheme: dark) {
   :root[data-theme="system"] {
-      --bg: #080d1b;
-    --bg-raised: #0e1629;
-    --fg: #e8edf8;
-    --muted: #9eabc6;
-    --card: #0e1629;
-    --line: #1d2945;
-    --brand: #7aa8ff;
-    --brand-solid: #2f6fed;
-    --brand-soft: #14244a;
+    --bg: #090d1f;
+    --bg-raised: #0f1530;
+    --fg: #e9eeff;
+    --muted: #9fabcb;
+    --card: #101736;
+    --line: #202a52;
+    --brand: #86adff;
+    --brand-solid: #3b6ef5;
+    --brand-2: #9a74ff;
+    --brand-soft: #172250;
+    --glass: rgb(16 23 54 / 0.7);
+    --glass-line: rgb(255 255 255 / 0.08);
+    --grad: linear-gradient(135deg, #2f64f0 0%, #5b5bf0 55%, #8458ff 100%);
     --ink: #dbe6ff;
     --danger: #ff8a80;
     --ok: #5fd68a;
     --warn: #f5b84b;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px -16px rgb(0 0 0 / 0.7);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.4), 0 22px 44px -16px rgb(0 0 0 / 0.8);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-    --bg: #080d1b;
-    --bg-raised: #0e1629;
-    --fg: #e8edf8;
-    --muted: #9eabc6;
-    --card: #0e1629;
-    --line: #1d2945;
-    --brand: #7aa8ff;
-    --brand-solid: #2f6fed;
-    --brand-soft: #14244a;
-    --ink: #dbe6ff;
-    --danger: #ff8a80;
-    --ok: #5fd68a;
-    --warn: #f5b84b;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px -16px rgb(0 0 0 / 0.7);
-    color-scheme: dark;
+  --bg: #090d1f;
+  --bg-raised: #0f1530;
+  --fg: #e9eeff;
+  --muted: #9fabcb;
+  --card: #101736;
+  --line: #202a52;
+  --brand: #86adff;
+  --brand-solid: #3b6ef5;
+  --brand-2: #9a74ff;
+  --brand-soft: #172250;
+  --glass: rgb(16 23 54 / 0.7);
+  --glass-line: rgb(255 255 255 / 0.08);
+  --grad: linear-gradient(135deg, #2f64f0 0%, #5b5bf0 55%, #8458ff 100%);
+  --ink: #dbe6ff;
+  --danger: #ff8a80;
+  --ok: #5fd68a;
+  --warn: #f5b84b;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px -16px rgb(0 0 0 / 0.7);
+  --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.4), 0 22px 44px -16px rgb(0 0 0 / 0.8);
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -72,6 +87,7 @@
   --color-line: var(--line);
   --color-brand: var(--brand);
   --color-brand-solid: var(--brand-solid);
+  --color-brand-2: var(--brand-2);
   --color-brand-soft: var(--brand-soft);
   --color-brand-fg: var(--brand-fg);
   --color-ink: var(--ink);
@@ -83,6 +99,7 @@
   --radius-ctl: var(--radius-ctl);
   --radius-card: var(--radius-card);
   --shadow-card: var(--shadow);
+  --shadow-lift: var(--shadow-lift);
 }
 
 html { scroll-padding-top: 5.5rem; }
@@ -91,7 +108,11 @@ html { scroll-padding-top: 5.5rem; }
 }
 
 body {
-  background: var(--bg);
+  background:
+    radial-gradient(60rem 36rem at 100% -10%, color-mix(in srgb, var(--brand-2) 13%, transparent), transparent 70%),
+    radial-gradient(50rem 30rem at -10% 0%, color-mix(in srgb, var(--brand-solid) 11%, transparent), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--fg);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -114,27 +135,29 @@ body {
   gap: 0.5rem;
   white-space: nowrap;
   border-radius: var(--radius-ctl);
-  padding: 0.6rem 1.1rem;
+  padding: 0.65rem 1.15rem;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 650;
   line-height: 1.25;
-  background: var(--brand-solid);
+  background: var(--grad);
   color: var(--brand-fg);
   border: 1px solid transparent;
-  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s, border-color 0.2s, opacity 0.2s;
+  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--brand-solid) 70%, transparent);
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s, box-shadow 0.2s, background-color 0.2s, border-color 0.2s, opacity 0.2s;
 }
-.btn:hover:not(:disabled) { background: color-mix(in srgb, var(--brand-solid) 88%, black); }
+.btn:hover:not(:disabled) { filter: brightness(1.08); box-shadow: 0 12px 26px -8px color-mix(in srgb, var(--brand-solid) 75%, transparent); }
 .btn:active:not(:disabled) { transform: translateY(1px) scale(0.985); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-.btn-lg { padding: 0.8rem 1.4rem; font-size: 0.95rem; }
+.btn-lg { padding: 0.85rem 1.5rem; font-size: 0.95rem; }
 .btn-ghost {
-  background: transparent;
+  background: var(--card);
   color: var(--fg);
   border-color: var(--line);
+  box-shadow: none;
 }
-.btn-ghost:hover:not(:disabled) { background: var(--brand-soft); border-color: transparent; }
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-danger:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 88%, black); }
+.btn-ghost:hover:not(:disabled) { background: var(--brand-soft); border-color: transparent; filter: none; box-shadow: none; }
+.btn-danger { background: var(--danger); color: #fff; box-shadow: none; }
+.btn-danger:hover:not(:disabled) { background: color-mix(in srgb, var(--danger) 88%, black); filter: none; box-shadow: none; }
 
 .input {
   width: 100%;
@@ -142,17 +165,17 @@ body {
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--fg);
-  padding: 0.65rem 0.85rem;
+  padding: 0.7rem 0.95rem;
   font-size: 0.925rem;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .input::placeholder { color: var(--muted); opacity: 0.8; }
 .input:hover { border-color: color-mix(in srgb, var(--brand) 35%, var(--line)); }
-.input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-solid) 22%, transparent); }
+.input:focus { border-color: var(--brand); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand-solid) 18%, transparent); }
 .input[aria-invalid="true"] { border-color: var(--danger); }
 
-.label { display: block; font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.4rem; }
+.label { display: block; font-size: 0.8125rem; font-weight: 650; margin-bottom: 0.45rem; }
 
 /* ---- surfaces ------------------------------------------------------------------------- */
 .card {
@@ -161,6 +184,17 @@ body {
   border-radius: var(--radius-card);
   box-shadow: var(--shadow);
 }
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--shadow);
+}
+.lift { transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s; }
+.lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+.text-grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.bg-grad { background: var(--grad); }
 
 /* a faint blueprint grid that fades out, used behind heroes */
 .bg-grid {
@@ -175,8 +209,8 @@ body {
 /* soft tinted field, not a glow */
 .bg-wash {
   background:
-    radial-gradient(60% 50% at 85% 10%, color-mix(in srgb, var(--brand-solid) 14%, transparent), transparent 70%),
-    radial-gradient(45% 40% at 5% 30%, color-mix(in srgb, var(--brand-solid) 8%, transparent), transparent 70%);
+    radial-gradient(60% 50% at 85% 10%, color-mix(in srgb, var(--brand-2) 16%, transparent), transparent 70%),
+    radial-gradient(45% 40% at 5% 30%, color-mix(in srgb, var(--brand-solid) 10%, transparent), transparent 70%);
 }
 
 .caret::after {
@@ -229,3 +263,56 @@ body {
 .scroll-thin { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .sk { background: linear-gradient(90deg, var(--line), color-mix(in srgb, var(--line) 50%, var(--card)), var(--line)); background-size: 200% 100%; animation: sk 1.4s linear infinite; border-radius: 0.5rem; }
 @keyframes sk { to { background-position: -200% 0; } }
+
+/* ---- tinted tiles: each hue is a soft wash plus a matching icon colour ------------------------- */
+.tint { --t: #2f64f0; background: linear-gradient(145deg, color-mix(in srgb, var(--t) 13%, var(--card)), color-mix(in srgb, var(--t) 3%, var(--card))); }
+.tint-ico { background: color-mix(in srgb, var(--t) 16%, var(--card)); color: var(--t); }
+.t-blue { --t: #2f64f0; }
+.t-violet { --t: #7c4dff; }
+.t-amber { --t: #ee8a1b; }
+.t-green { --t: #12a36b; }
+.t-cyan { --t: #0aa5c4; }
+.t-rose { --t: #e5487a; }
+.t-red { --t: #e5484d; }
+
+/* ---- sidebar ---------------------------------------------------------------------------------- */
+.sidebar-surface { background: linear-gradient(180deg, color-mix(in srgb, var(--brand-soft) 75%, var(--card)) 0%, var(--card) 65%); }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.95rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: var(--muted);
+  transition: background-color 0.2s, color 0.2s;
+}
+.nav-item:hover { background: color-mix(in srgb, var(--brand-solid) 9%, transparent); color: var(--fg); }
+.nav-item[aria-current="page"] { background: var(--grad); color: #fff; box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--brand-solid) 80%, transparent); }
+
+/* ---- hero banners and the logo halo ---------------------------------------------------------- */
+.hero-banner {
+  background:
+    radial-gradient(40rem 18rem at 92% 0%, color-mix(in srgb, var(--brand-2) 24%, transparent), transparent 70%),
+    radial-gradient(30rem 16rem at 0% 100%, color-mix(in srgb, var(--brand-solid) 18%, transparent), transparent 70%),
+    linear-gradient(135deg, color-mix(in srgb, var(--brand-soft) 90%, var(--card)), var(--card));
+}
+.orb-halo {
+  position: absolute;
+  inset: -24%;
+  border-radius: 9999px;
+  background: conic-gradient(from 180deg, color-mix(in srgb, var(--brand-solid) 40%, transparent), color-mix(in srgb, var(--brand-2) 40%, transparent), color-mix(in srgb, var(--brand-solid) 40%, transparent));
+  filter: blur(34px);
+  opacity: 0.6;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .orb-halo { animation: halo 16s linear infinite; }
+}
+@keyframes halo { to { transform: rotate(360deg); } }
+
+.chat-empty-bg {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 18%, color-mix(in srgb, var(--brand-solid) 10%, transparent), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 85% 85%, color-mix(in srgb, var(--brand-2) 9%, transparent), transparent 70%);
+}

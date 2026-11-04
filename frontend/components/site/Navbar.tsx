@@ -48,7 +48,7 @@ export function Navbar() {
 
         <div className="hidden items-center gap-2 md:flex">
           {!loading && user ? (
-            <Link href="/dashboard" className="btn">
+            <Link href="/workspace" className="btn">
               <LayoutDashboard className="h-4 w-4" strokeWidth={2} aria-hidden /> Open app
             </Link>
           ) : (
@@ -98,7 +98,7 @@ export function Navbar() {
               ))}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {!loading && user ? (
-                  <Link href="/dashboard" onClick={() => setOpen(false)} className="btn col-span-2">
+                  <Link href="/workspace" onClick={() => setOpen(false)} className="btn col-span-2">
                     Open app
                   </Link>
                 ) : (

@@ -90,7 +90,7 @@ export default function VerifyEmailPage() {
         <div className="card p-6 text-center">
           <CheckCircle2 className="mx-auto h-10 w-10 text-ok" strokeWidth={1.75} aria-hidden />
           <p className="mt-4 text-[0.95rem] leading-relaxed text-muted">Thank you. Your account is ready to use.</p>
-          <Link href="/dashboard" className="btn btn-lg mt-6 w-full">
+          <Link href="/workspace" className="btn btn-lg mt-6 w-full">
             Go to my dashboard
           </Link>
         </div>
@@ -107,7 +107,7 @@ export default function VerifyEmailPage() {
         </>
       }
       footer={
-        <Link href="/dashboard" className="font-semibold text-brand hover:underline">
+        <Link href="/workspace" className="font-semibold text-brand hover:underline">
           Do this later
         </Link>
       }

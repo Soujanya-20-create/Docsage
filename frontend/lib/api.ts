@@ -1,6 +1,13 @@
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-export type User = { id: number; email: string; name: string; email_verified: boolean };
+export type User = {
+  id: number;
+  email: string;
+  name: string;
+  email_verified: boolean;
+  verification_required: boolean; // uploading and asking wait for a confirmed email
+  email_enabled: boolean; // the server can email a code at all
+};
 export type Doc = {
   id: number;
   filename: string;

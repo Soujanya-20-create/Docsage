@@ -25,7 +25,7 @@ import { AreaChart, Sparkline } from "@/components/charts/AreaChart";
 import { BarList } from "@/components/charts/BarList";
 import { CountUp } from "@/components/charts/CountUp";
 import { DonutChart } from "@/components/charts/DonutChart";
-import { ApiError, api, type Stats } from "@/lib/api";
+import { ApiError, api, type Stats, type User } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useChats } from "@/lib/chats";
 import { usePrefs } from "@/lib/prefs";
@@ -56,12 +56,17 @@ function Panel({ title, hint, action, children, className = "" }: { title: strin
 
 function StatCard({ icon: Icon, label, value, detail, trend }: { icon: typeof FileText; label: string; value: number; detail: string; trend?: number[] }) {
   return (
-    <div className="card p-5">
+    <div className="card p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <span className="grid h-9 w-9 place-items-center rounded-xl bg-brand-soft text-brand">
           <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden />
         </span>
-        {trend && trend.some((v) => v > 0) && <Sparkline values={trend} />}
+        {/* A trend needs at least two active days; one spike reads as a glitch. Too tight beside the icon on phones. */}
+        {trend && trend.filter((v) => v > 0).length >= 2 && (
+          <span className="hidden sm:block">
+            <Sparkline values={trend} />
+          </span>
+        )}
       </div>
       <p className="mt-4 text-3xl font-semibold tabular-nums tracking-tight">
         <CountUp value={value} />
@@ -86,6 +91,38 @@ function Meter({ label, used, max, format }: { label: string; used: number; max:
         <div className={`h-full rounded-full transition-[width] duration-700 ${pct > 85 ? "bg-warn" : "bg-brand-solid"}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
+  );
+}
+
+/** First-run steps, shown until the basics are done. Confirming the email only counts when the server can send a code. */
+function SetupChecklist({ stats, user }: { stats: Stats; user: User | null }) {
+  const steps = [
+    { done: stats.totals.ready > 0, title: "Upload a document", text: "PDFs and scans both work.", href: "/documents", cta: "Upload" },
+    { done: stats.totals.questions > 0, title: "Ask your first question", text: "Answers cite their pages.", href: "/chat", cta: "Open chat" },
+  ];
+  if (user?.email_enabled) steps.push({ done: user.email_verified, title: "Confirm your email", text: "Enter the 6-digit code we sent.", href: "/verify-email", cta: "Enter code" });
+  if (steps.every((s) => s.done)) return null;
+
+  return (
+    <section className="card p-5 sm:p-6">
+      <h2 className="text-base font-semibold tracking-tight">Get set up</h2>
+      <ul className={`mt-4 grid gap-3 ${steps.length === 3 ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+        {steps.map((s) => (
+          <li key={s.title} className={`flex items-start gap-3 rounded-2xl border p-4 ${s.done ? "border-ok/30 bg-ok/5" : "border-line"}`}>
+            {s.done ? <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-ok" strokeWidth={1.75} aria-hidden /> : <Circle className="mt-0.5 h-5 w-5 shrink-0 text-muted" strokeWidth={1.75} aria-hidden />}
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">{s.title}</p>
+              <p className="text-xs text-muted">{s.text}</p>
+              {!s.done && (
+                <Link href={s.href} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline">
+                  {s.cta} <ArrowRight className="h-3 w-3" strokeWidth={2} aria-hidden />
+                </Link>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -156,7 +193,7 @@ export default function DashboardPage() {
         <div className="bg-wash absolute inset-0 -z-10" aria-hidden />
         <div className="bg-grid absolute inset-0 -z-10 opacity-70" aria-hidden />
         <div className="grid items-center gap-8 p-6 sm:p-10 lg:grid-cols-[1.35fr_0.65fr]">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-semibold text-brand">
               {greeting()}
               {first ? `, ${first}` : ""}
@@ -200,9 +237,8 @@ export default function DashboardPage() {
           </div>
 
           <div className="relative hidden place-items-center lg:grid" aria-hidden>
-            <div className="grid h-44 w-44 place-items-center rounded-full border border-line bg-brand-soft/60">
-              <ThinkingOrb state="weaving" size={64} theme="auto" />
-            </div>
+            <div className="absolute h-44 w-44 rounded-full bg-brand-solid/15 blur-3xl" />
+            <ThinkingOrb state="weaving" size={64} theme="auto" />
           </div>
         </div>
       </section>
@@ -219,37 +255,13 @@ export default function DashboardPage() {
 
       {!stats && !error && <Skeleton />}
 
-      {stats && (
-        <>
-          {/* First-run checklist until the basics are done */}
-          {(stats.totals.ready === 0 || stats.totals.questions === 0 || !user?.email_verified) && (
-            <section className="card p-5 sm:p-6">
-              <h2 className="text-base font-semibold tracking-tight">Get set up</h2>
-              <ul className="mt-4 grid gap-3 md:grid-cols-3">
-                {[
-                  { done: stats.totals.ready > 0, title: "Upload a document", text: "PDFs and scans both work.", href: "/documents", cta: "Upload" },
-                  { done: stats.totals.questions > 0, title: "Ask your first question", text: "Answers cite their pages.", href: "/chat", cta: "Open chat" },
-                  { done: !!user?.email_verified, title: "Confirm your email", text: "Enter the 6-digit code we sent.", href: "/verify-email", cta: "Enter code" },
-                ].map((s) => (
-                  <li key={s.title} className={`flex items-start gap-3 rounded-2xl border p-4 ${s.done ? "border-ok/30 bg-ok/5" : "border-line"}`}>
-                    {s.done ? <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-ok" strokeWidth={1.75} aria-hidden /> : <Circle className="mt-0.5 h-5 w-5 shrink-0 text-muted" strokeWidth={1.75} aria-hidden />}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold">{s.title}</p>
-                      <p className="text-xs text-muted">{s.text}</p>
-                      {!s.done && (
-                        <Link href={s.href} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline">
-                          {s.cta} <ArrowRight className="h-3 w-3" strokeWidth={2} aria-hidden />
-                        </Link>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+      {stats && <SetupChecklist stats={stats} user={user} />}
 
+      {/* A new account sees only the checklist: the numbers and charts arrive with the first document. */}
+      {stats && stats.totals.documents > 0 && (
+        <>
           {/* Numbers */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <StatCard icon={FileText} label="Documents" value={stats.totals.documents} detail={`${stats.totals.ready} ready${processing ? `, ${processing} processing` : ""}`} trend={stats.activity.map((a) => a.uploads)} />
             <StatCard icon={Layers} label="Pages indexed" value={stats.totals.pages} detail={`${stats.totals.passages.toLocaleString()} searchable passages`} />
             <StatCard icon={MessageSquare} label="Questions asked" value={stats.totals.questions} detail="Across all chats" trend={stats.activity.map((a) => a.questions)} />
